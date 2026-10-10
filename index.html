@@ -915,7 +915,7 @@ function reqDlg(id){const q=REQ.find(x=>x.id===id),d=get(q.f),v=V.find(x=>x.id==
  o.querySelector('#rrx').onclick=()=>{o.querySelector('#rrb').hidden=true};
  o.querySelector('#rrt').oninput=()=>showErr(o,'rrt','');
  o.querySelector('#rrc').onclick=()=>{const m=o.querySelector('#rrt').value.trim();if(m.length<5){showErr(o,'rrt','Escribe por qué no procede. El vendedor lo ve tal cual.');o.querySelector('#rrt').focus();return}
-  if(q.ventaSrv){toast('Rechazar aún no guarda tu motivo en la base. Falta una columna; pendiente de aprobación.');return}q.est='rechazada';q.r=m;log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();render();toast('Solicitud rechazada. El vendedor ve tu motivo')}}
+  if(q.ventaSrv){apiJson('/api/solicitudes/'+encodeURIComponent(q.id),'PATCH',{accion:'rechazar',motivo:m}).then(()=>{log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();return cargarDisplays()}).then(()=>toast('Solicitud rechazada. El vendedor ve tu motivo')).catch(e=>toast('No se rechazó: '+e.message));return}q.est='rechazada';q.r=m;log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();render();toast('Solicitud rechazada. El vendedor ve tu motivo')}}
 async function reqSrvAprobar(q,o){
  const body={accion:'aprobar'};
  if(q.tipo==='reponer'){const f=o.querySelector('#rqs').value;if(!f){showErr(o,'rqs','Elige el display que le vas a asignar.');o.querySelector('#rqs').focus();return}body.folio_nuevo=f}
