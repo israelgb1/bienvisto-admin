@@ -260,35 +260,11 @@ const INFO='<svg viewBox="0 0 24 24" fill="none" stroke="#0E6B5C" stroke-width="
 const IC={cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
 
 /* datos inventados */
-let V=[
- {id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'},
- {id:'marco',n:'Marco Ibarra',m:'marco.ibarra@gmail.com',rol:'vendedor',e:'activo',alta:'2026-09-14',tope:2000,conf:'confianza',repMes:1,cu:{titular:'Marco Ibarra Solís',clabe:'012180001234567899',cuenta:'0123456789',tipo:'Débito'},cuH:[{t:'2026-09-14',x:'Primera carga de datos de cobro'}]},
- {id:'sofia',n:'Sofía Lara',m:'sofia.lara@outlook.com',rol:'vendedor',e:'activo',alta:'2026-09-22',tope:2000,cu:{titular:'Sofía Lara Medina',clabe:'072180001234567897',cuenta:'4455667788',tipo:'Nómina'},cuP:{titular:'Sofía Lara Medina',clabe:'002180009876543212',cuenta:'1122334455',tipo:'Débito',t:'2026-10-05'},cuH:[{t:'2026-09-22',x:'Primera carga de datos de cobro'},{t:'2026-10-05',x:'Pidió cambiar a Banamex (pendiente de aprobación)'}]},
- {id:'diego',n:'Diego Ríos',m:'diego.rios@gmail.com',rol:'vendedor',e:'inactivo',alta:'2026-09-10',tope:2000}];
-const CL=[
- {id:'c1',n:'Familia Ruiz',p:'Rosa Ruiz',wa:'33 2345 6789',m:'rosa@familiaruiz.mx'},
- {id:'c2',n:'Café Tinto SA',p:'Andrés Tinoco',wa:'33 3456 7890',m:'andres@cafetinto.mx'},
- {id:'c3',n:'Barbería El Corte',p:'Mario Peña',wa:'33 4567 8901',m:'mario@elcorte.mx'},
- {id:'c4',n:'Panadería Pan Nuestro',p:'Ana Gómez',wa:'33 9876 5432',m:'ana@pannuestro.mx'},
- {id:'c5',n:'Clínica Dental Sonríe',p:'Luis Medina',wa:'33 1122 3344',m:'recepcion@sonrie.mx'},
- {id:'c6',n:'Taquería El Güero',p:'Jorge Salazar',wa:'33 5566 7788',m:'jorge@elguero.mx'},
- {id:'c7',n:'Ópticas Visión Clara',p:'Paty Orozco',wa:'33 2211 4455',m:'paty@visionclara.mx'},
- {id:'c8',n:'Gimnasio Fuerza 33',p:'Ricardo Vela',wa:'33 6677 8899',m:'ricardo@fuerza33.mx'},
- {id:'c9',n:'Lavandería Burbuja',p:'Elena Cortés',wa:'33 3344 5566',m:'elena@burbuja.mx'}];
-const D=[
- ['M3K7','activo','c1','Tacos La Esquina · Patria','marco','2026-10-06'],['P8Q4','activo','c1','Tacos La Esquina · Colomos','marco','2026-10-05'],
- ['T5W2','activo','c2','Café Tinto · Ladrón de Guevara','marco','2026-10-03'],['H2R6','retirado','c3','Barbería El Corte','marco','2026-09-12'],
- ['W4N7','activo','c4','Panadería Pan Nuestro','sofia','2026-09-29'],['B6C3','activo','c5','Clínica Dental Sonríe','marco','2026-10-01'],
- ['D8F2','activo','c5','Clínica Dental Sonríe','marco','2026-10-01'],['G3H5','activo','c6','Taquería El Güero · Centro','sofia','2026-10-02'],
- ['Y2Z8','activo','c6','Taquería El Güero · Zapopan','sofia','2026-10-05'],['J7K4','activo','c7','Ópticas Visión Clara','isra','2026-09-08'],
- ['Q2R9','activo','c8','Gimnasio Fuerza 33','diego','2026-09-15'],['S5T6','activo','c8','Gimnasio Fuerza 33','diego','2026-09-15'],
- ['V9X3','perdido','c9','Lavandería Burbuja','diego','2026-09-20'],
- ['X4W3','libre',null,null,'marco',null],['K9B2','libre',null,null,'marco',null],['N3D8','libre',null,null,'sofia',null],['R7F4','libre',null,null,'sofia',null],
- ['C7D2','libre',null,null,'diego',null],['F5G6','libre',null,null,'diego',null],['A2C5','libre',null,null,null,null],['E6F7','libre',null,null,null,null],['U4V8','libre',null,null,null,null]
-].map((r,i)=>({f:r[0],e:r[1],cl:r[2],su:r[3],v:r[4],fecha:r[5],esc:r[1]==='activo'?Math.round(14+((i*37)%41)):0}));
-Object.assign(D.find(d=>d.f==='N3D8'),{e:'prueba',pr:{neg:'Pastelería Dulce Vía',min:18}});
+let V=[{id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'}];
+const CL=[];
+const D=[];
 const PRB={ini:14,vend:9,exp:3,lib:2};
-const LOTES=[{id:'L1',f:'2026-09-01',n:15,tipo:'Reseñas de Google',costo:50,dest:null,nota:'Primera producción'},{id:'L2',f:'2026-09-25',n:7,tipo:'Reseñas de Google',costo:50,dest:null,nota:'Segunda producción'}];
+const LOTES=[];
 D.forEach((d,i)=>{d.tipo='Reseñas de Google';d.lote=i<15?'L1':'L2';d.alta=i<15?'2026-09-01':'2026-09-25'});
 let LEAD_D=14,COLCH=5,PARADO_D=30,ESC_BAJO=20;
 const SC=Array.from({length:30},(_,i)=>Math.round(36+i*4.2+((i*7)%11)*3));
@@ -306,8 +282,8 @@ const mxn=n=>'$'+(Number.isInteger(n)?n.toLocaleString('es-MX'):n.toLocaleString
 const mk=(id,rn,f,cl,v,m,ref,fecha,h,est,x)=>Object.assign({id,rn,f,cl,v,m,ref,fecha,h,est,p:350,c:150,pn:3,pp:900},x||{});
 
 let BONOS=[{n:5,b:100},{n:10,b:300},{n:20,b:800}];let BONOS_ON=false;
-const BASE_OCT={marco:3,sofia:1,diego:0};
-let BONO_PREV=[{v:'marco',mes:'Septiembre 2026',n:6,b:100,pag:'2026-10-03',ref:'SPEI83920'},{v:'sofia',mes:'Septiembre 2026',n:5,b:100,pag:null,ref:''}];
+const BASE_OCT={};
+let BONO_PREV=[];
 const bonoDe=n=>BONOS_ON?BONOS.filter(x=>n>=x.n).reduce((a,x)=>x.b,0):0;
 const sigMeta=n=>BONOS_ON?BONOS.find(x=>n<x.n):undefined;
 const entMesV=id=>(BASE_OCT[id]||0)+SALES.filter(x=>x.v===id&&x.est==='entregada'&&x.fc&&x.fc>='2026-10-01').reduce((a,x)=>a+x.f.length,0);
@@ -316,22 +292,9 @@ const nivel=v=>v&&v.conf==='confianza'?'confianza':'nuevo';
 const NIVT={nuevo:'Nuevo',confianza:'De confianza'};
 const REQT={reponer:'Reposición',cambiar:'Cambio de negocio'};
 const FOTO_DANO='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150"><rect width="240" height="150" fill="#E9E1D0"/><rect x="70" y="40" width="100" height="70" rx="8" fill="#12302B"/><path d="M95 40 L125 110 M125 40 L110 75" stroke="#FBF6EC" stroke-width="3"/><text x="12" y="138" font-family="sans-serif" font-size="11" fill="#4A5F59">Foto de ejemplo del mockup: display dañado</text></svg>');
-let REQ=[
- {id:'Q1',tipo:'reponer',f:'W4N7',v:'sofia',mot:'Se dañó',nota:'El cliente tiró el display y se rompió la base.',foto:FOTO_DANO,t:'2026-10-06 09:40',est:'pend'},
- {id:'Q2',tipo:'cambiar',f:'Y2Z8',v:'sofia',mot:'Me equivoqué de negocio',nota:'',nuevo:'Taquería El Güero · Tlaquepaque',t:'2026-10-05 19:10',est:'pend'}];
+let REQ=[];
 const reqPend=()=>REQ.filter(q=>q.est==='pend');
-let SALES=[
- mk('S1',1001,['J7K4'],'c7','isra','efectivo','','2026-09-08',700,'entregada'),
- mk('S2',1002,['H2R6'],'c3','marco','efectivo','','2026-09-12',600,'entregada'),
- mk('S3',1003,['Q2R9','S5T6'],'c8','diego','efectivo','','2026-09-15',504,'pend'),
- mk('S4',1004,['V9X3'],'c9','diego','efectivo','','2026-09-20',400,'entregada'),
- mk('S5',1005,['W4N7'],'c4','sofia','efectivo','','2026-09-29',200,'entregada'),
- mk('S6',1006,['B6C3','D8F2'],'c5','marco','efectivo','','2026-10-01',130,'entregada'),
- mk('S7',1007,['G3H5'],'c6','sofia','efectivo','','2026-10-02',100,'entregada'),
- mk('S8',1008,['T5W2'],'c2','marco','efectivo','','2026-10-03',72,'entregada',{fac:'emitida'}),
- mk('S9',1009,['P8Q4'],'c1','marco','transferencia','CR2K9F71AB','2026-10-05',26,'pend',{sol:true,solM:'El cliente se arrepintió',fac:'no'}),
- mk('S10',1010,['Y2Z8'],'c6','sofia','efectivo','','2026-10-05',19,'rev',{foto:FOTO,fac:'pend'}),
- mk('S11',1011,['M3K7'],'c1','marco','efectivo','','2026-10-06',3,'pend',{fac:'si',facEnv:'12:10'})];
+let SALES=[];
 const facTxt=s=>s.fac==='emitida'?'Factura emitida':s.fac==='si'?'Pide factura'+(s.facEnv?' · enlace enviado '+s.facEnv:''):s.fac==='pend'?'El vendedor aún no pregunta':'Sin factura';
 const com=s=>s.f.length*s.c,tot=s=>Math.floor(s.f.length/s.pn)*s.pp+(s.f.length%s.pn)*s.p,ent=s=>tot(s)-com(s),promoS=s=>Math.floor(s.f.length/s.pn);
 const rest=s=>ent(s)-(s.abono||0);
@@ -341,13 +304,7 @@ const saldoV=id=>{const v=V.find(x=>x.id===id),tope=(v&&v.tope)||TOPE,ss=SALES.f
  return {m,aj,deuda,tope,net:Math.max(0,m-aj),h,b:deuda>0?'deuda':h>=HORAS?'horas':(m+(PR.p-PR.c)>tope?'tope':'')}};
 const calc=(p,c,costo,isr)=>{const base=p/1.16,iva=p-base,im=base*isr/100;return {base,iva,im,ut:p-iva-costo-c-im,ent:p-c}};
 const hace=h=>h<1?'Ahora':h<24?'Hace '+h+' h':h<48?'Ayer':'Hace '+Math.floor(h/24)+' días';
-const LOG=[
- {t:'2026-10-05 17:40',q:'Sofía Lara',x:'Activó Y2Z8 para Taquería El Güero · Zapopan'},
- {t:'2026-10-02 12:05',q:'Sofía Lara',x:'Activó G3H5 para Taquería El Güero · Centro'},
- {t:'2026-10-01 10:30',q:'Marco Ibarra',x:'Activó B6C3 y D8F2 para Clínica Dental Sonríe (lote)'},
- {t:'2026-09-30 09:12',q:'Isra Guerrero',x:'Desactivó a Diego Ríos'},
- {t:'2026-09-25 16:20',q:'Isra Guerrero',x:'Asignó 2 displays a Sofía Lara'}];
-
+const LOG=[];
 let S={vista:'res',vsub:'ventas',fs:'todas',yo:'isra',fe:'todos',fv:'todos',q:'',sel:new Set(),cq:''};
 const yo=()=>V.find(v=>v.id===S.yo), admin=()=>yo().rol==='admin';
 const vn=id=>id?V.find(v=>v.id===id).n:'Bodega';
@@ -548,10 +505,9 @@ function vendDlg(id){const v=V.find(x=>x.id===id),m=D.filter(d=>d.v===id);
  <h3 style="font-size:18px;font-weight:500;margin:14px 0 4px">Sus displays</h3>${m.length?`<div class="mini">${m.map(d=>`<button data-d="${d.f}"><span class="folio">${d.f}</span><span class="grow" style="flex:1"><span class="n" style="font-weight:600">${esc(d.su||'Libre, sin negocio')}</span></span><span class="chip ${chipE(d.e)}">${d.e}</span></button>`).join('')}</div>`:'<p class="sub">Aún no tiene displays.</p>'}`,true)}
 
 const codNuevo=()=>{let c;do{c=rnd(LETR)+rnd(DIGI)+rnd(LETR)+rnd(DIGI)}while(V.some(x=>x.cod===c));return c};
-function invDlg(){const o=ov(`<h2>Invitar vendedor</h2><p class="sub">Verá solo sus displays y sus clientes. Después de invitarlo, hay un paso en Cloudflare para que pueda entrar. En su primer ingreso carga sus datos de cobro (titular a su nombre, CLABE, cuenta y tipo); con ellos le manda su cuenta al cliente por WhatsApp. Cualquier cambio posterior de cuenta lo apruebas tú. Arranca como vendedor «Nuevo»: solicita cambios de negocio y reposiciones, tú los apruebas. Arranca con un tope de ${mxn(TOPE_NUEVO)} y sube a ${mxn(TOPE)} cuando le confirmes su primera entrega.</p>
+function invDlg(){const o=ov(`<h2>Invitar vendedor</h2><p class="sub">Verá solo sus displays y sus clientes. Después de darlo de alta, hay un paso en Cloudflare para que pueda entrar. En su primer ingreso carga sus datos de cobro (titular a su nombre, CLABE, cuenta y tipo); con ellos le manda su cuenta al cliente por WhatsApp. Cualquier cambio posterior de cuenta lo apruebas tú. Arranca como vendedor «Nuevo»: solicita cambios de negocio y reposiciones, tú los apruebas. Arranca con un tope de ${mxn(TOPE_NUEVO)} y sube a ${mxn(TOPE)} cuando le confirmes su primera entrega.</p>
  <div class="fld"><label class="lbl" for="in">Nombre completo</label><input class="f" id="in" autocomplete="off" aria-describedby="in-e"><div id="in-e"></div></div>
  <div class="fld"><label class="lbl" for="im">Correo</label><input class="f" id="im" inputmode="email" autocapitalize="off" spellcheck="false" aria-describedby="im-e"><div id="im-e"></div></div>
- <div class="fld"><label class="lbl" for="ipor">Invitado por (opcional)</label><select class="f" id="ipor"><option value="">Nadie, lo di de alta yo</option>${V.filter(v=>v.rol==='vendedor'&&v.e==='activo').map(v=>`<option value="${v.id}">${esc(v.n)}</option>`).join('')}</select><p class="hint">Solo se guarda quién recomendó a este vendedor. El programa de referidos está apagado, así que por ahora no genera ningún premio.</p></div>
  <div class="row2"><button class="btn p" id="ig">Invitar</button><button class="btn s" data-x>Cancelar</button></div>`);
  const eN=v=>{v=v.trim().replace(/\s+/g,' ');if(!v)return'Escribe el nombre del vendedor.';if(/\d|@/.test(v))return'El nombre no lleva números ni correos.';if(v.split(' ').length<2)return'Escribe nombre y apellido. Ejemplo: Marco Ibarra.';return''};
  const eM=v=>{v=v.trim().toLowerCase();if(!v)return'Escribe el correo del vendedor.';if(!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v))return'El correo no se ve bien. Ejemplo: nombre@gmail.com';if(V.some(x=>x.m===v))return'Ese correo ya está registrado como '+V.find(x=>x.m===v).n+'.';return''};
@@ -560,13 +516,13 @@ function invDlg(){const o=ov(`<h2>Invitar vendedor</h2><p class="sub">Verá solo
  o.querySelector('#in').onblur=()=>{sh.in=true;show('in',eN(o.querySelector('#in').value))};o.querySelector('#im').onblur=()=>{sh.im=true;show('im',eM(o.querySelector('#im').value))};
  o.querySelector('#in').oninput=()=>{if(sh.in)show('in',eN(o.querySelector('#in').value))};o.querySelector('#im').oninput=()=>{if(sh.im)show('im',eM(o.querySelector('#im').value))};
  o.querySelector('#ig').onclick=()=>{const a=eN(o.querySelector('#in').value),b=eM(o.querySelector('#im').value);show('in',a);show('im',b);if(a||b){o.querySelector(a?'#in':'#im').focus();return}
-  const n=o.querySelector('#in').value.trim().replace(/\s+/g,' '),m=o.querySelector('#im').value.trim().toLowerCase();const id='v'+(V.length+1);V.push({id,n,m,rol:'vendedor',e:'invitado',alta:'2026-10-06',tope:TOPE_NUEVO,cuH:[],inv:o.querySelector('#ipor').value||null,cod:codNuevo()});log('Invitó a '+n);render();vendDlg(id);toast('Invitación registrada')}}
+  const n=o.querySelector('#in').value.trim().replace(/\s+/g,' '),m=o.querySelector('#im').value.trim().toLowerCase();crearVendedorSrv({nombre:n,correo:m}).then(id=>{log('Dio de alta a '+n);vendDlg(id);toast('Vendedor dado de alta')}).catch(e=>toast('No se dio de alta: '+e.message))}}
 
 function desDlg(id){const v=V.find(x=>x.id===id),lib=D.filter(d=>d.v===id&&d.e==='libre'),ac=D.filter(d=>d.v===id&&d.e==='activo').length;
- const o=ov(`<h2>Desactivar a ${esc(v.n)}</h2><p class="sub">Pierde el acceso de inmediato. Sus ${ac} displays activos siguen con sus clientes y las activaciones se conservan a su nombre.</p>
+ const o=ov(`<h2>Desactivar a ${esc(v.n)}</h2><p class="sub">Pierde el acceso de inmediato. Sus ${ac} displays activos pasan a bodega; las ventas ya registradas se conservan a su nombre.</p>
  ${lib.length?`<div class="fld"><label class="lbl" for="dst">Sus ${lib.length} displays libres pasan a</label><select class="f" id="dst"><option value="">Bodega (inventario general)</option>${V.filter(x=>x.rol==='vendedor'&&x.e==='activo'&&x.id!==id).map(x=>`<option value="${x.id}">${esc(x.n)}</option>`).join('')}</select></div>`:'<p class="sub">No tiene displays libres en custodia.</p>'}
  <div class="row2"><button class="btn d" id="dok">Desactivar</button><button class="btn s" data-x>Cancelar</button></div>`);
- o.querySelector('#dok').onclick=()=>{const dst=lib.length?o.querySelector('#dst').value||null:null;lib.forEach(d=>d.v=dst);v.e='inactivo';log('Desactivó a '+v.n+(lib.length?' y pasó '+lib.length+' displays a '+vn(dst):''));cerrar();render();toast(v.n+' desactivado')}}
+ o.querySelector('#dok').onclick=()=>cambiarVendedorSrv(id,{estado:'inactivo',destino_libres:lib.length?o.querySelector('#dst').value||null:null}).then(()=>{log('Desactivó a '+v.n);cerrar();render();toast(v.n+' desactivado')}).catch(e=>toast('No se pudo desactivar: '+e.message))}
 function reasDlg(id){desDlg(id)}
 
 /* displays */
@@ -579,7 +535,7 @@ R.dis=()=>{const m=mis(),q=S.q.toLowerCase();const rows=m.filter(d=>(S.fe==='tod
  <div class="tw"><table><thead><tr>${admin()?'<th style="width:44px"><span class="sr" style="position:absolute;left:-9999px">Seleccionar</span></th>':''}<th>Folio</th><th>Negocio</th><th class="hide-m">Cliente</th>${admin()?'<th class="hide-m">Vendedor</th>':''}<th>Estado</th>${admin()?'<th class="hide-m">Pago</th>':''}<th class="num hide-m">Escaneos 7 d</th><th class="hide-m">Fecha</th></tr></thead><tbody>${rows.length?rows.map(d=>`<tr class="row" data-d="${d.f}">${admin()?`<td data-stop>${d.e==='libre'?`<input type="checkbox" data-ck="${d.f}" aria-label="Seleccionar ${d.f}" ${S.sel.has(d.f)?'checked':''}>`:''}</td>`:''}<td><span class="folio">${d.f}</span></td><td><div class="n">${esc(d.su||'Sin asignar')}</div></td><td class="hide-m">${d.cl?esc(cln(d.cl).n):'<span class="m" style="color:var(--muted)">·</span>'}</td>${admin()?`<td class="hide-m">${esc(vn(d.v))}${d.v&&V.find(v=>v.id===d.v).e==='inactivo'?' <span class="chip c-g" style="margin-left:4px">inactivo</span>':''}</td>`:''}<td><span class="chip ${chipE(d.e)}">${d.e}</span></td>${admin()?`<td class="hide-m">${pagoChip(d)}</td>`:''}<td class="num hide-m">${d.e==='activo'?d.esc:'·'}</td><td class="hide-m">${d.fecha?fmt(d.fecha):'·'}</td></tr>`).join(''):`<tr><td colspan="9"><div class="empty"><b>Ningún display coincide.</b>Quita una palabra o cambia los filtros.</div></td></tr>`}</tbody></table></div>`;
  $('#q').oninput=e=>{S.q=e.target.value;const p=e.target.selectionStart;R.dis();const i=$('#q');i.focus();i.setSelectionRange(p,p)};
  $('#fe').onchange=e=>{S.fe=e.target.value;R.dis()};if($('#fv'))$('#fv').onchange=e=>{S.fv=e.target.value;R.dis()};
- if($('#asgb'))$('#asgb').onclick=()=>{const dst=$('#asg').value||null;libSel.forEach(f=>get(f).v=dst);log('Asignó '+libSel.length+' displays a '+vn(dst));S.sel.clear();R.dis();toast(libSel.length+' displays asignados a '+vn(dst))}};
+ if($('#asgb'))$('#asgb').onclick=()=>asignarSrv(libSel,$('#asg').value||null)};
 const get=f=>D.find(d=>d.f===f);
 function dispDlg(f){const d=get(f),c=d.cl?cln(d.cl):null;
  const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><span class="folio" style="font-size:30px">${d.f}</span><button class="btn s sm" data-x>Cerrar</button></div><span class="chip ${chipE(d.e)}">${d.e}</span>
@@ -593,6 +549,11 @@ async function borrarLoteSrv(id){const r=await fetch('/api/lotes/'+encodeURIComp
 async function guardarLote(id,datos){try{const r=await fetch('/api/lotes/'+encodeURIComponent(id),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(datos)});if(!r.ok)throw new Error('lote')}catch(e){toast('No se guardaron los datos del lote en el servidor')}}
 async function guardarDisplay(f,cambios){try{const r=await fetch('/api/displays/'+encodeURIComponent(f),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(cambios)});const j=await r.json();if(!r.ok)throw new Error(j.error||'error');const d=get(f);if(cambios.estado!==undefined)d.e=j.estado;if('negocio_asignado' in cambios)d.su=cambios.negocio_asignado;cerrar();render();toast('Display '+f+' actualizado')}catch(e){toast('No se pudo guardar: '+e.message)}}
 
+async function apiJson(url,metodo,cuerpo){const r=await fetch(url,{method:metodo,headers:{'content-type':'application/json'},body:cuerpo?JSON.stringify(cuerpo):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'error');return j}
+async function crearVendedorSrv(datos){const j=await apiJson('/api/vendedores','POST',datos);await cargarDisplays();return j.id}
+async function cambiarVendedorSrv(id,cambios){const j=await apiJson('/api/vendedores/'+encodeURIComponent(id),'PATCH',cambios);await cargarDisplays();return j}
+async function asignarSrv(folios,vendedor){if(!folios.length)return;try{await apiJson('/api/displays/asignar','POST',{folios,vendedor_id:vendedor});S.sel.clear();await cargarDisplays();toast(folios.length+' displays asignados a '+vn(vendedor))}catch(e){toast('No se asignaron: '+e.message)}}
+
 /* ---------- Inventario ---------- */
 const FOLIO_RE=/^[A-HJ-KM-NP-Z][2-9][A-HJ-KM-NP-Z][2-9]$/,LETR='ABCDEFGHJKLMNPQRSTUVWXYZ',DIGI='23456789',HOYS=new Date().toISOString().slice(0,10);
 const TIPOS=['Reseñas de Google','Otro tipo (descríbelo en la nota)'];
@@ -600,7 +561,7 @@ Object.assign(S,{isub:'cap',ie:'todos',iv:'todos',iq:'',ip:false,cap:{modo:'uno'
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 V.forEach(v=>{if(v.rol==='vendedor'&&!v.cod)v.cod=codNuevo()});
 async function genFoliosServidor(n){const r=await fetch('/api/displays/batch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cantidad:n})});const j=await r.json();if(!r.ok)throw new Error(j.error||'error');return j}
-async function cargarDisplays(){const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:null,fecha:null,esc:0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false})));render()}
+async function cargarDisplays(){const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})))}const rv=await fetch('/api/vendedores');if(rv.ok){const vr=await rv.json();V.splice(0,V.length,...V.filter(x=>x.rol==='admin'),...vr.map(x=>({id:x.id,n:x.nombre,m:x.correo||'',rol:'vendedor',e:x.estado==='activo'?'activo':'inactivo',alta:(x.fecha_registro||'').slice(0,10),tope:TOPE})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:x.vendedor_id||null,fecha:null,esc:0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false})));render()}
 function genFolios(n){const used=new Set(D.map(d=>d.f)),out=[];let guard=0;while(out.length<n&&guard++<n*50){const f=rnd(LETR)+rnd(DIGI)+rnd(LETR)+rnd(DIGI);if(!used.has(f)){used.add(f);out.push(f)}}return out}
 const csvEsc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
 const filaCsv=(f,m)=>[f,'https://ir.bienvisto.com.mx/'+f.toLowerCase(),m.tipo,m.lote,m.costo,m.dest].map(csvEsc).join(',');
@@ -928,7 +889,7 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('#nav [data-v]')){S.vista=el.dataset.v;S.sel.clear();render();return}
  if(t.closest('[data-stop]'))return;
  if(el=t.closest('[data-des]')){e.stopPropagation();desDlg(el.dataset.des);return}
- if(el=t.closest('[data-rea]')){e.stopPropagation();const v=V.find(x=>x.id===el.dataset.rea);v.e='activo';log('Reactivó a '+v.n);render();toast(v.n+' reactivado');return}
+ if(el=t.closest('[data-rea]')){e.stopPropagation();const v=V.find(x=>x.id===el.dataset.rea);cambiarVendedorSrv(v.id,{estado:'activo'}).then(()=>{log('Reactivó a '+v.n);toast(v.n+' reactivado')}).catch(e=>toast('No se pudo reactivar: '+e.message));return}
  if(el=t.closest('[data-reasignar]')){S.vista='ven';render();desDlg(el.dataset.reasignar);return}
  if(el=t.closest('[data-vsub]')){S.vsub=el.dataset.vsub;R.vta();return}
  if(el=t.closest('[data-gocob]')){S.vista='vta';S.vsub='saldos';render();return}
