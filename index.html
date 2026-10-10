@@ -564,7 +564,7 @@ async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ve
  const anul={};solicitudes.filter(q=>q.tipo==='anular'&&q.estado==='pendiente').forEach(q=>{anul[q.venta_id]=q});
  REQ.splice(0,REQ.length,...solicitudes.filter(q=>q.tipo!=='anular'&&q.estado==='pendiente').map(q=>({id:q.id,v:q.vendedor_id,f:q.folio,tipo:q.tipo,est:'pend',mot:q.motivo||'Sin motivo',nota:q.nota||'',nuevo:q.nuevo_negocio||'',t:(q.created_at||'').slice(0,10),foto:null,r:'',ventaSrv:true})));
  CL.splice(0,CL.length,...visibles.map(v=>({id:v.id,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})));
- SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=(v.created_at||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:v.estado==='pendiente'?'pend':ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:null,fc:null,ventaSrv:true}}));}
+ SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=(v.created_at||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:v.estado==='pendiente'?'pend':ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:null,fc:null,ventaSrv:true,srv:v.estado}}));}
 async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cambios);await cargarDisplays()}
 
 /* ---------- Inventario ---------- */
@@ -868,10 +868,13 @@ async function anularSrv(s,o){
   log('Anuló la venta BV-'+s.rn);cerrar();await cargarDisplays();toast('Venta BV-'+s.rn+' anulada')}
  catch(e){toast('No se anuló: '+e.message)}}
 
+async function impagoSrv(v,ss,m,o){try{for(const x of ss)await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'impago',valor:1});log('Registró adeudo por impago de '+v.n+' ('+mxn(m)+')');cerrar();await cargarDisplays();toast('Adeudo de '+mxn(m)+' registrado')}catch(e){toast('No se registró el adeudo: '+e.message)}}
+
 async function adeudoSrv(v,ss,o,pago,url){
- if(pago&&!url){showErr(o,'adurl','Pega la URL de reseña de Google del negocio.');o.querySelector('#adurl').focus();return}
+ if(pago&&!url&&ss.some(x=>x.srv==='pendiente'||x.srv==='rev')){showErr(o,'adurl','Pega la URL de reseña de Google del negocio.');o.querySelector('#adurl').focus();return}
  try{for(const x of ss){
-   if(pago)await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:x.ref||null});
+   if(pago&&(x.srv==='pendiente'||x.srv==='rev'))await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:x.ref||null});
+   else if(pago)await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'impago',valor:0});
    else await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'anular'});}
   log('Resolvió el adeudo de '+v.n+' ('+mxn(ss.reduce((a,x)=>a+rest(x),0))+'): '+(pago?'pagó':'devolvió los displays'));cerrar();await cargarDisplays();
   toast('Adeudo resuelto. El panel de '+v.n.split(' ')[0]+' se desbloquea')}
@@ -879,10 +882,10 @@ async function adeudoSrv(v,ss,o,pago,url){
 
 
 function impDlg(id){const v=V.find(x=>x.id===id),ss=SALES.filter(s=>s.v===id&&cust(s)&&s.h>=HORAS),ds=ss.flatMap(s=>s.f).filter(f=>get(f).e==='activo'),m=ss.reduce((a,s)=>a+rest(s),0);
- const o=ov(`<h2>Retirar por impago</h2><p class="sub">${esc(v.n)} tiene ${mxn(m)} sin entregar desde hace más de ${HORAS} h.</p>
- <div class="step">${ds.length?`Estos displays dejan de llevar a reseñas y quien los escanee verá un botón al negocio en Google Maps: <b>${ds.join(', ')}</b>. Quedan «por recuperar».`:'Sus displays ya están retirados; solo se marca el adeudo.'} Los <b>${mxn(m)}</b> pasan a ser un <b>adeudo del vendedor</b> y su panel bloquea nuevas activaciones. Se libera cuando pague el adeudo o regrese los displays.</div>
- <div class="row2"><button class="btn d" id="iok">Retirar y registrar adeudo</button><button class="btn s" data-x>Cancelar</button></div>`);
- o.querySelector('#iok').onclick=()=>{if(ss.some(x=>x.ventaSrv)){toast('Retirar por impago todavía no está conectado al servidor.');return}ds.forEach(f=>{const d=get(f);d.e='retirado';d.rec=true});ss.forEach(s=>{s.imp=true;s.rec=true});log('Retiró '+(ds.length||'0')+' displays de '+v.n+' por impago. Adeudo de '+mxn(m));cerrar();render();toast('Adeudo de '+mxn(m)+' registrado · '+ds.length+' displays retirados')}}
+ const o=ov(`<h2>Registrar adeudo por impago</h2><p class="sub">${esc(v.n)} tiene ${mxn(m)} sin entregar desde hace más de ${HORAS} h.</p>
+ <div class="step">${ss.some(x=>x.ventaSrv)?'Los displays siguen activos: el cliente sigue viendo la reseña. El adeudo de <b>'+mxn(m)+'</b> bloquea las nuevas activaciones del vendedor hasta que se liquide.':(ds.length?`Estos displays dejan de llevar a reseñas y quien los escanee verá un botón al negocio en Google Maps: <b>${ds.join(', ')}</b>. Quedan «por recuperar».`:'Sus displays ya están retirados; solo se marca el adeudo.')+' Los <b>'+mxn(m)+'</b> pasan a ser un <b>adeudo del vendedor</b> y su panel bloquea nuevas activaciones. Se libera cuando pague el adeudo o regrese los displays.'}</div>
+ <div class="row2"><button class="btn d" id="iok">Registrar adeudo</button><button class="btn s" data-x>Cancelar</button></div>`);
+ o.querySelector('#iok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return impagoSrv(v,ss,m,o);ds.forEach(f=>{const d=get(f);d.e='retirado';d.rec=true});ss.forEach(s=>{s.imp=true;s.rec=true});log('Retiró '+(ds.length||'0')+' displays de '+v.n+' por impago. Adeudo de '+mxn(m));cerrar();render();toast('Adeudo de '+mxn(m)+' registrado · '+ds.length+' displays retirados')}}
 
 function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter(s=>s.v===id&&s.imp&&(s.est==='pend'||s.est==='rev'));
  const o=ov(`<h2>Resolver adeudo · ${esc(v.n)}</h2><p class="sub">Tiene un adeudo de ${mxn(sd.deuda)} por ${ss.map(s=>'BV-'+s.rn).join(', ')}.</p>
@@ -890,7 +893,7 @@ function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filte
  <div class="fld" id="adu" hidden><label class="lbl" for="adurl">URL de reseña de Google del negocio</label><input class="f" id="adurl" inputmode="url" autocomplete="off" aria-describedby="adurl-e"><div id="adurl-e"></div></div>
  <p class="sub" id="adt" style="margin-bottom:0"></p>
  <div class="row2"><button class="btn p" id="aok">Confirmar</button><button class="btn s" data-x>Cancelar</button></div>`);
- const t=()=>{o.querySelector('#adu').hidden=o.querySelector('#ad').value!=='pago';o.querySelector('#adt').textContent=o.querySelector('#ad').value==='pago'?'Confirma que ya recibiste el dinero. Las ventas quedan liquidadas, los displays siguen retirados hasta que los reactives y su panel se desbloquea.':'Las ventas se anulan, los displays vuelven a libre y el vendedor devuelve el dinero a sus clientes. Su panel se desbloquea.'};
+ const t=()=>{o.querySelector('#adu').hidden=o.querySelector('#ad').value!=='pago'||!ss.some(x=>x.srv==='pendiente'||x.srv==='rev');o.querySelector('#adt').textContent=o.querySelector('#ad').value==='pago'?'Confirma que ya recibiste el dinero. Las ventas quedan liquidadas, los displays siguen retirados hasta que los reactives y su panel se desbloquea.':'Las ventas se anulan, los displays vuelven a libre y el vendedor devuelve el dinero a sus clientes. Su panel se desbloquea.'};
  o.querySelector('#ad').onchange=t;t();
  o.querySelector('#aok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return adeudoSrv(v,ss,o,o.querySelector('#ad').value==='pago',o.querySelector('#adurl').value.trim());const pago=o.querySelector('#ad').value==='pago';
   ss.forEach(s=>{s.imp=false;s.rec=false;if(pago){s.est='entregada';s.fc='2026-10-06';s.abono=0}else{s.est='anulada';s.f.forEach(f=>{const d=get(f);d.e='libre';d.cl=null;d.su=null;d.fecha=null;d.esc=0;d.rec=false})}});
