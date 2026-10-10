@@ -662,7 +662,7 @@ R.inv=()=>{const iv=invStats(),inv=LOTES.reduce((a,l)=>a+l.n*l.costo,0),calle=iv
  <p style="margin:4px 0 0">Tienes <b>${iv.lib.length}</b> libres y vendes ~${iv.dem.toFixed(1)} por semana: alcanzan para <b>${iv.cob===null?'—':iv.cob.toFixed(1)} semanas</b>. Producir tarda ${LEAD_D} días, así que conviene pedir cuando bajes de <b>${iv.reord}</b>.</p>
  <div class="gg" role="img" aria-label="${iv.lib.length} libres, punto de reorden ${iv.reord}"><i style="width:${Math.min(100,iv.lib.length/g*100)}%"></i><u style="left:${Math.min(100,iv.reord/g*100)}%"></u></div>
  <p class="hint">Se calcula con tus ventas de las últimas 4 semanas, el tiempo de producción y un colchón de ${COLCH}. Los ajustas en Ajustes.</p></div>
- <div>${iv.qty>0?`<button class="btn p" data-invsug>Registrar lote de ${iv.qty}</button>`:`<span class="hint">Por ahora no hace falta producir.</span>`}</div></section>
+ <div>${iv.qty>0?'':`<span class="hint">Por ahora no hace falta producir.</span>`}</div></section>
  <div class="tabs2" role="group" aria-label="Sección de inventario">${[['cap','Registrar'],['lotes','Lotes ('+LOTES.length+')'],['lista','Inventario ('+D.length+')']].map(([k,t])=>`<button data-isub="${k}" aria-pressed="${S.isub===k}">${t}</button>`).join('')}</div>
  ${S.isub==='cap'?invCap():S.isub==='lotes'?invLotes():invLista()}`;
  if(S.isub==='cap'){capRes();const c=S.cap,on=(id,f)=>{const e=$('#'+id);if(e)e.oninput=ev=>{f(ev.target);capRes()}};
