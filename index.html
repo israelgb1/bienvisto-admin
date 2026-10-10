@@ -562,6 +562,7 @@ async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ve
  // Pendientes sin cobrar no se muestran, salvo las marcadas por impago (son el adeudo).
  const visibles=ventas.filter(v=>v.estado!=='pendiente'||v.impago===1);
  const anul={};solicitudes.filter(q=>q.tipo==='anular'&&q.estado==='pendiente').forEach(q=>{anul[q.venta_id]=q});
+ REQ.splice(0,REQ.length,...solicitudes.filter(q=>q.tipo!=='anular'&&q.estado==='pendiente').map(q=>({id:q.id,v:q.vendedor_id,f:q.folio,tipo:q.tipo,est:'pend',mot:q.motivo||'Sin motivo',nota:q.nota||'',nuevo:q.nuevo_negocio||'',t:(q.created_at||'').slice(0,10),foto:null,r:'',ventaSrv:true})));
  CL.splice(0,CL.length,...visibles.map(v=>({id:v.id,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})));
  SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=(v.created_at||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:v.estado==='pendiente'?'pend':ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:null,fc:null,ventaSrv:true}}));}
 async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cambios);await cargarDisplays()}
@@ -896,14 +897,15 @@ function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filte
   log('Resolvió el adeudo de '+v.n+' ('+mxn(sd.deuda)+'): '+(pago?'pagó':'devolvió los displays'));cerrar();render();toast('Adeudo resuelto. El panel de '+v.n.split(' ')[0]+' se desbloquea')}}
 
 function reqDlg(id){const q=REQ.find(x=>x.id===id),d=get(q.f),v=V.find(x=>x.id===q.v),c=d.cl?cln(d.cl):null;
- const libres=D.filter(x=>x.e==='libre'&&(x.v===q.v||!x.v));
+ const libres=D.filter(x=>x.e==='libre'&&(x.v===q.v||(!x.v&&!q.ventaSrv)));
  const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>${q.tipo==='reponer'?'Solicitud de reposición':'Solicitud de cambio de negocio'}</h2><button class="btn s sm" data-x>Cerrar</button></div>
  <dl class="dl"><dt>Vendedor</dt><dd>${esc(v.n)} · ${NIVT[nivel(v)]}</dd><dt>Display</dt><dd><span class="folio">${d.f}</span> · ${esc(d.su||'')}</dd>${c?`<dt>Cliente</dt><dd>${esc(c.n)}</dd>`:''}<dt>Motivo</dt><dd>${esc(q.mot)}</dd>${q.nota?`<dt>Lo que cuenta</dt><dd>${esc(q.nota)}</dd>`:''}${q.tipo==='cambiar'?`<dt>Pasaría a</dt><dd><b>${esc(q.nuevo)}</b></dd>`:`<dt>Reposiciones este mes</dt><dd>${v.repMes||0} de ${LIM_REP} directas</dd>`}<dt>Enviada</dt><dd>${q.t}</dd></dl>
  ${q.foto?`<img src="${q.foto}" alt="Foto del display dañado" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;border:1px solid var(--borde);margin:4px 0 10px">`:''}
  ${q.tipo==='reponer'?`<div class="fld"><label class="lbl" for="rqs">Display de reposición</label>${libres.length?`<select class="f" id="rqs" aria-describedby="rqs-e"><option value="">Elige un display libre</option>${libres.map(x=>`<option value="${x.f}">${x.f} · ${x.v?'en custodia de '+esc(vn(x.v)):'de bodega (se asigna a '+esc(v.n.split(' ')[0])+')'}</option>`).join('')}</select><div id="rqs-e"></div>`:`<p class="err">${ERR}<span>No hay displays libres para asignar. Agrega inventario antes de aprobar.</span></p><select id="rqs" hidden></select><div id="rqs-e"></div>`}<p class="m" style="color:var(--muted);margin:6px 0 0">${q.mot==='Se dañó'?'El display dañado queda «retirado, por recuperar»: pídele que te lo regrese.':'El display queda como perdido y su folio no se vuelve a usar.'} Se registra con tu nombre.</p></div>`:`<p class="m" style="color:var(--muted)">Confirma con el vendedor o el cliente que es la sucursal correcta. El enlace del display cambia al instante.</p>`}
+ <div class="fld" id="rqu-w"${q.tipo==='cambiar'&&q.ventaSrv?'':' hidden'}><label class="lbl" for="rqu">URL de reseña de Google del nuevo negocio</label><input class="f" id="rqu" inputmode="url" autocomplete="off" aria-describedby="rqu-e"><div id="rqu-e"></div></div>
  <div class="row2"><button class="btn p" id="rqa" ${q.tipo==='reponer'&&!libres.length?'disabled':''}>${q.tipo==='reponer'?'Aprobar y asignar':'Aprobar cambio'}</button><button class="btn s" id="rqr">Rechazar</button></div>
  <div id="rrb" hidden style="margin-top:12px"><div class="fld"><label class="lbl" for="rrt">Motivo del rechazo (lo ve el vendedor)</label><textarea class="f" id="rrt" rows="2" maxlength="200" aria-describedby="rrt-e"></textarea><div id="rrt-e"></div></div><div class="row2"><button class="btn d" id="rrc">Rechazar solicitud</button><button class="btn s" id="rrx">No rechazar</button></div></div>`,true);
- o.querySelector('#rqa').onclick=()=>{
+ o.querySelector('#rqa').onclick=()=>{if(q.ventaSrv)return reqSrvAprobar(q,o);
   if(q.tipo==='reponer'){const f=o.querySelector('#rqs').value;if(!f){showErr(o,'rqs','Elige el display que le vas a asignar.');o.querySelector('#rqs').focus();return}
    const n=get(f);n.e='activo';n.cl=d.cl;n.su=d.su;n.fecha='2026-10-06';n.esc=0;n.v=q.v;d.e=q.mot==='Se dañó'?'retirado':'perdido';d.rec=q.mot==='Se dañó';
    log('Aprobó la reposición de '+d.f+' por '+n.f+' para '+v.n+' ('+q.mot.toLowerCase()+')');toast(d.f+' repuesto por '+n.f)}
@@ -913,7 +915,16 @@ function reqDlg(id){const q=REQ.find(x=>x.id===id),d=get(q.f),v=V.find(x=>x.id==
  o.querySelector('#rrx').onclick=()=>{o.querySelector('#rrb').hidden=true};
  o.querySelector('#rrt').oninput=()=>showErr(o,'rrt','');
  o.querySelector('#rrc').onclick=()=>{const m=o.querySelector('#rrt').value.trim();if(m.length<5){showErr(o,'rrt','Escribe por qué no procede. El vendedor lo ve tal cual.');o.querySelector('#rrt').focus();return}
-  q.est='rechazada';q.r=m;log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();render();toast('Solicitud rechazada. El vendedor ve tu motivo')}}
+  if(q.ventaSrv){apiJson('/api/solicitudes/'+encodeURIComponent(q.id),'PATCH',{accion:'rechazar',motivo:m}).then(()=>{log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();return cargarDisplays()}).then(()=>toast('Solicitud rechazada. El vendedor ve tu motivo')).catch(e=>toast('No se rechazó: '+e.message));return}q.est='rechazada';q.r=m;log('Rechazó la solicitud de '+(q.tipo==='reponer'?'reposición':'cambio de negocio')+' de '+q.f+' ('+v.n+'): '+m);cerrar();render();toast('Solicitud rechazada. El vendedor ve tu motivo')}}
+async function reqSrvAprobar(q,o){
+ const body={accion:'aprobar'};
+ if(q.tipo==='reponer'){const f=o.querySelector('#rqs').value;if(!f){showErr(o,'rqs','Elige el display que le vas a asignar.');o.querySelector('#rqs').focus();return}body.folio_nuevo=f}
+ else{const u=o.querySelector('#rqu').value.trim();if(!u){showErr(o,'rqu','Pega la URL de reseña de Google del nuevo negocio.');o.querySelector('#rqu').focus();return}body.url_resena=u}
+ try{await apiJson('/api/solicitudes/'+encodeURIComponent(q.id),'PATCH',body);
+  log('Aprobó la solicitud de '+(q.tipo==='reponer'?'reposición de '+q.f+' por '+body.folio_nuevo:'cambio de negocio de '+q.f+' a '+q.nuevo));
+  cerrar();await cargarDisplays();toast('Solicitud aprobada')}
+ catch(e){toast('No se aprobó: '+e.message)}}
+
 function nivelSet(id,n){const v=V.find(x=>x.id===id);if(nivel(v)===n)return;cambiarVendedorSrv(id,{nivel:n}).then(()=>{log('Cambió a '+v.n+' a vendedor '+NIVT[n].toLowerCase());vendDlg(id);toast(v.n.split(' ')[0]+' ahora es vendedor '+NIVT[n].toLowerCase())}).catch(e=>toast('No se cambió el nivel: '+e.message))}
 function cuAprobar(id){const v=V.find(x=>x.id===id);v.cu={titular:v.cuP.titular,clabe:v.cuP.clabe,cuenta:v.cuP.cuenta,tipo:v.cuP.tipo};v.cuH=(v.cuH||[]).concat([{t:'2026-10-06',x:'Cambio aprobado por '+yo().n+': '+bancoDe(v.cu.clabe)+' ···· '+v.cu.clabe.slice(-4)}]);v.cuP=null;log('Aprobó el cambio de cuenta de cobro de '+v.n);render();vendDlg(id);toast('Cuenta de '+v.n.split(' ')[0]+' actualizada')}
 function cuRechazar(id){const v=V.find(x=>x.id===id);v.cuP=null;v.cuH=(v.cuH||[]).concat([{t:'2026-10-06',x:'Cambio rechazado por '+yo().n}]);log('Rechazó el cambio de cuenta de cobro de '+v.n);render();vendDlg(id);toast('Solicitud rechazada. Se conserva su cuenta actual')}
