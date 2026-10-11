@@ -298,9 +298,10 @@ let SALES=[];
 const facTxt=s=>s.fac==='emitida'?'Factura emitida':s.fac==='si'?'Pide factura'+(s.facEnv?' · enlace enviado '+s.facEnv:''):s.fac==='pend'?'El vendedor aún no pregunta':'Sin factura';
 const com=s=>s.com!=null?s.com:s.f.length*s.c,tot=s=>s.tot!=null?s.tot:Math.floor(s.f.length/s.pn)*s.pp+(s.f.length%s.pn)*s.p,ent=s=>s.ent!=null?s.ent:tot(s)-com(s),promoS=s=>Math.floor(s.f.length/s.pn);
 const rest=s=>ent(s)-(s.abono||0);
-const cust=s=>(s.est==='pend'||s.est==='rev')&&!s.imp;
-const saldoV=id=>{const v=V.find(x=>x.id===id),tope=(v&&v.tope)||TOPE,ss=SALES.filter(s=>s.v===id),m=ss.filter(cust).reduce((a,s)=>a+rest(s),0),h=Math.max(0,...ss.filter(cust).map(s=>s.h)),
-  deuda=ss.filter(s=>s.imp&&(s.est==='pend'||s.est==='rev')).reduce((a,s)=>a+rest(s),0),aj=ss.filter(s=>s.est==='anulada'&&s.aj&&!s.ajA).reduce((a,s)=>a+s.aj,0);
+const cust=s=>(s.est==='cobrada'||(s.est==='entregada'&&rest(s)>0.001))&&!s.imp;
+const enCustodiaAdm=s=>['pendp','rev','cobrada','entregada'].includes(s.est)&&rest(s)>0.001;
+const saldoV=id=>{const v=V.find(x=>x.id===id),tope=(v&&v.tope)||TOPE,ss=SALES.filter(s=>s.v===id),m=ss.filter(enCustodiaAdm).reduce((a,s)=>a+rest(s),0),h=Math.max(0,...ss.filter(cust).map(s=>s.h)),
+  deuda=ss.filter(s=>s.imp&&(s.est==='pendp'||s.est==='cobrada'||s.est==='rev')).reduce((a,s)=>a+rest(s),0),aj=ss.filter(s=>s.est==='anulada'&&s.aj&&!s.ajA).reduce((a,s)=>a+s.aj,0);
  return {m,aj,deuda,tope,net:Math.max(0,m-aj),h,b:deuda>0?'deuda':h>=HORAS?'horas':(m+(PR.p-PR.c)>tope?'tope':'')}};
 const calc=(p,c,costo,isr)=>{const base=p/1.16,iva=p-base,im=base*isr/100;return {base,iva,im,ut:p-iva-costo-c-im,ent:p-c}};
 const hace=h=>h<1?'Ahora':h<24?'Hace '+h+' h':h<48?'Ayer':'Hace '+Math.floor(h/24)+' días';
@@ -557,14 +558,14 @@ async function asignarSrv(folios,vendedor){if(!folios.length)return;try{await ap
 async function cargarHistorialSrv(){const r=await fetch('/api/auditoria');if(!r.ok)return;const rows=await r.json();const f=s=>{const d=new Date(String(s).replace(' ','T')+'Z');if(isNaN(d))return '';const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};LOG.splice(0,LOG.length,...rows.map(x=>({t:f(x.fecha),q:(V.find(v=>v.m===x.usuario)||{n:x.usuario}).n,x:x.accion+(x.folio_afectado?' ('+x.folio_afectado+')':'')})));if(S.vista==='his')R.his()}
 async function cargarPreciosSrv(){const r=await fetch('/api/precios');if(!r.ok)return;const rows=await r.json();PH.splice(0,PH.length,...rows.map(x=>({f:(x.fecha||'').slice(0,10),p:x.precio,c:x.comision,q:(V.find(v=>v.m===x.usuario)||{n:x.usuario}).n,n:x.nota||''})));if(S.vista==='cfg')R.cfg()}
 async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ventas'),fetch('/api/solicitudes')]);if(!rv.ok||!rs.ok)throw new Error('ventas');const ventas=await rv.json(),solicitudes=await rs.json();
- const ESTV={rev:'rev',cobrada:'pend',entregada:'entregada',anulada:'anulada'},FACV={pide:'si',emitida:'emitida',no:'no'};
+ const ESTV={pendiente:'pendp',rev:'rev',cobrada:'cobrada',entregada:'entregada',anulada:'anulada'},FACV={pide:'si',emitida:'emitida',no:'no'};
  const ahora=Date.now();
  // Pendientes sin cobrar no se muestran, salvo las marcadas por impago (son el adeudo).
- const visibles=ventas.filter(v=>v.estado!=='pendiente'||v.impago===1);
+ const visibles=ventas;
  const anul={};solicitudes.filter(q=>q.tipo==='anular'&&q.estado==='pendiente').forEach(q=>{anul[q.venta_id]=q});
  REQ.splice(0,REQ.length,...solicitudes.filter(q=>q.tipo!=='anular'&&q.estado==='pendiente').map(q=>({id:q.id,v:q.vendedor_id,f:q.folio,tipo:q.tipo,est:'pend',mot:q.motivo||'Sin motivo',nota:q.nota||'',nuevo:q.nuevo_negocio||'',t:(q.created_at||'').slice(0,10),foto:null,r:'',ventaSrv:true})));
  CL.splice(0,CL.length,...visibles.map(v=>({id:v.id,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})));
- SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=(v.created_at||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:v.estado==='pendiente'?'pend':ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));}
+ SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=((v.fecha_cobro||v.created_at)||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));}
 async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cambios);await cargarDisplays()}
 
 /* ---------- Inventario ---------- */
@@ -657,7 +658,7 @@ R.his=()=>{$('#main').innerHTML=head()+`<div class="card"><p class="sub">Cada ca
 /* ===== cobros ===== */
 const errRef=v=>{v=v.trim();if(!v)return'Escribe la clave de rastreo o el folio del depósito.';if(/[^A-Za-z0-9]/.test(v))return'Solo lleva letras y números. Quita espacios y símbolos.';if(v.length<8)return'Es muy corta: lleva '+v.length+' caracteres y debe tener al menos 8.';if(v.length>30)return'Es muy larga: el máximo es 30 caracteres.';return''};
 const showErr=(o,k,m)=>{const e=o.querySelector('#'+k+'-e'),i=o.querySelector('#'+k);e.innerHTML=m?`<p class="err">${ERR}<span>${esc(m)}</span></p>`:'';m?i.setAttribute('aria-invalid','true'):i.removeAttribute('aria-invalid')};
-const chipS=s=>{let c=s.imp?'<span class="chip c-r">Retirada por impago</span>':s.est==='pend'?'<span class="chip c-a">Por entregar</span>':s.est==='rev'?'<span class="chip c-a">Aviso en revisión</span>':s.est==='anulada'?'<span class="chip c-g">Anulada</span>':'<span class="chip c-v">Liquidada</span>';
+const chipS=s=>{let c=s.imp?'<span class="chip c-r">Retirada por impago</span>':s.est==='pendp'?'<span class="chip c-a">Pendiente de pago</span>':s.est==='cobrada'?'<span class="chip c-a">Por entregar</span>':s.est==='rev'?'<span class="chip c-a">Aviso en revisión</span>':s.est==='anulada'?'<span class="chip c-g">Anulada</span>':'<span class="chip c-v">Liquidada</span>';
  return c+(s.sol&&s.est!=='anulada'?' <span class="chip c-r" style="margin-top:4px">Pide anulación</span>':'')+(s.rec&&s.est!=='anulada'?' <span class="chip c-r" style="margin-top:4px">Display por recuperar</span>':'')+(s.est==='anulada'&&s.aj&&!s.ajA?' <span class="chip c-a" style="margin-top:4px">Ajuste pendiente</span>':'')};
 const pagoChip=d=>{const s=SALES.find(x=>x.f.includes(d.f)&&x.est!=='anulada');return s?chipS(s):'<span class="m" style="color:var(--muted)">·</span>'};
 const saldoTxt=id=>{const sd=saldoV(id);return sd.deuda>0?'Adeudo '+mxn(sd.deuda):sd.net>0?mxn(sd.net)+' por entregar':'Al corriente'};
@@ -669,7 +670,7 @@ R.vta=()=>{const adm=admin();if(!adm)S.vsub='ventas';if(!BONOS_ON&&S.vsub==='bon
  $('#main').innerHTML=head()+tabs+'<div id="sub"></div>';({ventas:cobVentas,saldos:cobSaldos,bonos:cobBonos,precios:cobPrecios})[S.vsub]()};
 
 function cobVentas(){const adm=admin(),mine=adm?SALES:SALES.filter(s=>s.v===S.yo);
- const f=S.fs||'todas',okF=s=>f==='todas'||(f==='entregar'&&(s.est==='pend'||s.est==='rev'))||(f==='liq'&&s.est==='entregada')||(f==='anul'&&s.est==='anulada')||(f==='sol'&&s.sol&&s.est!=='anulada')||(f==='fac'&&s.fac==='si');
+ const f=S.fs||'todas',okF=s=>f==='todas'||(f==='entregar'&&(s.est==='cobrada'||s.est==='rev'))||(f==='liq'&&s.est==='entregada')||(f==='anul'&&s.est==='anulada')||(f==='sol'&&s.sol&&s.est!=='anulada')||(f==='fac'&&s.fac==='si');
  const rows=mine.filter(okF).sort((a,b)=>a.h-b.h);let top='';
  if(!adm){const sd=saldoV(S.yo),ok=mine.filter(s=>s.est!=='anulada');top=`<div class="kpis m"><div class="kpi"><b>${mxn(ok.reduce((a,s)=>a+com(s),0))}</b><span>comisión ganada (${ok.reduce((a,s)=>a+s.f.length,0)} displays)</span></div><div class="kpi"><b>${mxn(sd.net)}</b><span>debes entregar a Bien Visto · tope ${mxn(sd.m)} de ${mxn(sd.tope)}</span></div></div>`}
  $('#sub').innerHTML=top+`<div class="tbar"><select id="fs" aria-label="Filtrar ventas">${[['todas','Todas las ventas'],['entregar','Por entregar'],['liq','Liquidadas'],['sol','Piden anulación'],['fac','Piden factura'],['anul','Anuladas']].map(([k,t])=>`<option value="${k}" ${f===k?'selected':''}>${t}</option>`).join('')}</select></div>
@@ -813,11 +814,20 @@ function reciboHtml(s){const c=cln(s.cl),n=s.f.length,su=(get(s.f[0])&&get(s.f[0
 function wireRecibo(o){const sw=w=>{o.querySelector('#rw').hidden=w!==1;o.querySelector('#rm').hidden=w!==2;o.querySelector('#rt1').setAttribute('aria-pressed',String(w===1));o.querySelector('#rt2').setAttribute('aria-pressed',String(w===2))};o.querySelector('#rt1').onclick=()=>sw(1);o.querySelector('#rt2').onclick=()=>sw(2)}
 function recDlg(id){const s=SALES.find(x=>x.id===id);const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Recibo BV-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div><p class="sub">Así lo recibió ${esc(cln(s.cl).p)}, con el precio de ${mxn(s.p)} fijado al activar. Se envía 5 minutos después de activar, cuando ya no hay correcciones inmediatas.</p>${reciboHtml(s)}`,true);wireRecibo(o)}
 
+function cobrarDlg(id){const s=SALES.find(x=>x.id===id);
+ const o=ov(`<h2>Confirmar cobro · BV-${s.rn}</h2><p class="sub">Confirma que recibiste el pago. Al cobrar, los displays se activan y la reseña de Google queda lista para el cliente.</p>
+ <div class="fld"><label class="lbl" for="coburl">URL de reseña de Google del negocio</label><input class="f" id="coburl" inputmode="url" autocomplete="off" aria-describedby="coburl-e"><div id="coburl-e"></div></div>
+ <div class="row2"><button class="btn p" id="cobok">Cobrar venta</button><button class="btn s" data-x>Cancelar</button></div>`);
+ o.querySelector('#cobok').onclick=async()=>{const url=o.querySelector('#coburl').value.trim();
+  if(!/^https:\/\/(g\.page\/|([a-z0-9-]+\.)*google\.com\/)/i.test(url)){showErr(o,'coburl','Pega una URL https de Google (g.page o google.com).');o.querySelector('#coburl').focus();return}
+  try{await apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:s.ref||null});log('Cobró la venta BV-'+s.rn);cerrar();await cargarDisplays();toast('Venta BV-'+s.rn+' cobrada. Displays activos')}
+  catch(e){toast('No se cobró: '+e.message)}};}
+
 function saleDlg(id){const s=SALES.find(x=>x.id===id),c=cln(s.cl),adm=admin(),n=s.f.length;
  ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Venta BV-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div>${chipS(s)}
  ${s.sol&&s.est!=='anulada'?`<div class="step"><b>${esc(vn(s.v))} pide anularla.</b> Motivo: ${esc(s.solM)}.</div>`:''}
  <dl class="dl"><dt>Fecha</dt><dd>${fmt(s.fecha)} · ${hace(s.h)}</dd><dt>Displays</dt><dd>${s.f.join(', ')}</dd><dt>Cliente</dt><dd>${esc(c.n)} · ${esc(c.p)}</dd>${adm?`<dt>Vendedor</dt><dd>${esc(vn(s.v))}</dd>`:''}<dt>Cobro</dt><dd>${LAB[s.m]}${s.ref?' · clave '+esc(s.ref):''}</dd><dt>Factura</dt><dd>${facTxt(s)}</dd><dt>Total</dt><dd>${mxn(tot(s))} (IVA ${mxn(Math.round(tot(s)/1.16*.16*100)/100)})${promoS(s)?'</dd><dt>Promoción</dt><dd>'+s.pn+' por '+mxn(s.pp)+' · el cliente ahorró '+mxn(s.f.length*s.p-tot(s)):''}</dd><dt>Comisión del vendedor</dt><dd>${mxn(com(s))}</dd><dt>Entrega a Bien Visto</dt><dd>${mxn(ent(s))} · ${s.est==='entregada'?'recibida':s.est==='anulada'?'anulada':'pendiente'+(s.abono?' (abonó '+mxn(s.abono)+')':'')}</dd>${s.aj?`<dt>Ajuste al vendedor</dt><dd>− ${mxn(s.aj)} en su siguiente corte · ${s.ajA?'ya aplicado':'pendiente'}</dd>`:''}${s.rec?'<dt>Display</dt><dd>Por recuperar con el vendedor</dd>':''}</dl>
- <div class="row2" style="margin-top:8px"><button class="btn s sm" data-rec="${s.id}">Ver recibo del cliente</button>${adm&&s.fac==='si'?`<button class="btn a sm" data-facem="${s.id}">Marcar factura emitida</button>`:''}${adm&&s.est!=='anulada'?`<button class="btn d sm" data-anular="${s.id}">Anular venta</button>`:''}</div>`,true)}
+ <div class="row2" style="margin-top:8px"><button class="btn s sm" data-rec="${s.id}">Ver recibo del cliente</button>${adm&&s.fac==='si'?`<button class="btn a sm" data-facem="${s.id}">Marcar factura emitida</button>`:''}${adm&&(s.est==='pendp'||s.est==='rev')?`<button class="btn p sm" data-cobrar="${s.id}">Confirmar cobro</button>`:''}${adm&&s.est!=='anulada'?`<button class="btn d sm" data-anular="${s.id}">Anular venta</button>`:''}</div>`,true)}
 
 function anularDlg(id){const s=SALES.find(x=>x.id===id);
  const o=ov(`<h2>Anular venta BV-${s.rn}</h2><p class="sub">Queda registrada con tu nombre y el motivo. El cliente recibe un aviso de anulación.</p>
@@ -892,7 +902,7 @@ function impDlg(id){const v=V.find(x=>x.id===id),ss=SALES.filter(s=>s.v===id&&cu
  <div class="row2"><button class="btn d" id="iok">Registrar adeudo</button><button class="btn s" data-x>Cancelar</button></div>`);
  o.querySelector('#iok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return impagoSrv(v,ss,m,o);ds.forEach(f=>{const d=get(f);d.e='retirado';d.rec=true});ss.forEach(s=>{s.imp=true;s.rec=true});log('Retiró '+(ds.length||'0')+' displays de '+v.n+' por impago. Adeudo de '+mxn(m));cerrar();render();toast('Adeudo de '+mxn(m)+' registrado · '+ds.length+' displays retirados')}}
 
-function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter(s=>s.v===id&&s.imp&&(s.est==='pend'||s.est==='rev'));
+function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter(s=>s.v===id&&s.imp&&(s.est==='pendp'||s.est==='cobrada'||s.est==='rev'));
  const o=ov(`<h2>Resolver adeudo · ${esc(v.n)}</h2><p class="sub">Tiene un adeudo de ${mxn(sd.deuda)} por ${ss.map(s=>'BV-'+s.rn).join(', ')}.</p>
  <div class="fld"><label class="lbl" for="ad">¿Cómo lo resolvió?</label><select class="f" id="ad"><option value="pago">Pagó el adeudo (${mxn(sd.deuda)})</option><option value="dev">Devolvió los displays</option></select></div>
  <div class="fld" id="adu" hidden><label class="lbl" for="adurl">URL de reseña de Google del negocio</label><input class="f" id="adurl" inputmode="url" autocomplete="off" aria-describedby="adurl-e"><div id="adurl-e"></div></div>
@@ -978,7 +988,8 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-pf]')){S.pc=el.dataset.pf;R.res();return}
  if(el=t.closest('[data-pt]')){S.po=S.po===false;R.res();return}
  if(el=t.closest('[data-rec]')){recDlg(el.dataset.rec);return}
- if(el=t.closest('[data-anular]')){anularDlg(el.dataset.anular);return}
+ if(el=t.closest('[data-cobrar]')){cobrarDlg(el.dataset.cobrar);return}
+if(el=t.closest('[data-anular]')){anularDlg(el.dataset.anular);return}
  if(el=t.closest('[data-sale]')){saleDlg(el.dataset.sale);return}
  if(el=t.closest('[data-inv]')){invDlg();return}
  if(el=t.closest('[data-vd]')){vendDlg(el.dataset.vd);return}
