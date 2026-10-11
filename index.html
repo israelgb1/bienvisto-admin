@@ -251,7 +251,8 @@ button.sm:hover{background:#F6FAF8}
 (()=>{
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const HOY=new Date('2026-10-06T12:00:00');
+const HOY=new Date();HOY.setHours(12,0,0,0);
+const fechaMX=s=>{const t=Date.parse(String(s||'').replace(' ','T')+'Z');return isNaN(t)?'':new Date(t).toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'})};
 const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const fmt=d=>{const x=new Date(d+'T12:00:00');return x.getDate()+' '+MES[x.getMonth()]};
 const dias=d=>Math.round((HOY-new Date(d+'T12:00:00'))/864e5);
@@ -389,7 +390,7 @@ function resAdm(){const vend=V.filter(v=>v.rol==='vendedor'),act=D.filter(d=>d.e
  const bonoP=vend.reduce((a,v)=>a+bonoDe(entMesV(v.id)),0),baseO=cobO/1.16,ivaO=cobO-baseO,costoO=nO*PR.costo,isrO=baseO*PR.isr/100,utilO=cobO-ivaO-costoO-comO-isrO-bonoP;
  const R2=x=>Math.round(x*100)/100,sdv=vend.map(v=>({v,sd:saldoV(v.id)})),calle=sdv.reduce((a,x)=>a+x.sd.m,0),cap=vend.filter(v=>v.e==='activo').reduce((a,v)=>a+((v.tope)||TOPE),0);
  const rev=SALES.filter(s=>s.est==='rev'),nuevos=act.filter(d=>d.fecha&&d.fecha>=MESA+'-01').length;
- const wk=[0,0,0,0,0];vmes(MESA).concat(vp).forEach(s=>{const w=Math.floor(dias(s.fecha)/7);if(w<5)wk[4-w]+=s.f.length});const wmx=Math.max(1,...wk),wprev=(wk[0]+wk[1]+wk[2]+wk[3])/4;
+ const wk=[0,0,0,0,0];vmes(MESA).concat(vp).forEach(s=>{const w=Math.floor(dias(s.fecha)/7);if(w>=0&&w<5)wk[4-w]+=s.f.length});const wmx=Math.max(1,...wk),wprev=(wk[0]+wk[1]+wk[2]+wk[3])/4;
  const proyC=Math.round(cobO/DIA_HOY*DIAS_MES),proyN=Math.round(nO/DIA_HOY*DIAS_MES),proyU=Math.round(utilO/DIA_HOY*DIAS_MES);
  const estV=x=>{const {sd,v}=x,pct=sd.tope?sd.m/sd.tope:0,rest_=HORAS-sd.h;
   if(sd.deuda>0)return ['Adeudo','c-r','r'];if(sd.b==='horas')return ['Plazo vencido','c-r','r'];if(sd.b==='tope'||pct>=1)return ['Al tope','c-r','r'];
@@ -565,7 +566,7 @@ async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ve
  const anul={};solicitudes.filter(q=>q.tipo==='anular'&&q.estado==='pendiente').forEach(q=>{anul[q.venta_id]=q});
  REQ.splice(0,REQ.length,...solicitudes.filter(q=>q.tipo!=='anular'&&q.estado==='pendiente').map(q=>({id:q.id,v:q.vendedor_id,f:q.folio,tipo:q.tipo,est:'pend',mot:q.motivo||'Sin motivo',nota:q.nota||'',nuevo:q.nuevo_negocio||'',t:(q.created_at||'').slice(0,10),foto:null,r:'',ventaSrv:true})));
  CL.splice(0,CL.length,...visibles.map(v=>({id:v.id,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})));
- SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=((v.fecha_cobro||v.created_at)||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:(v.created_at||'').slice(0,10),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));}
+ SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=((v.fecha_cobro||v.created_at)||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:fechaMX(v.created_at),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));}
 async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cambios);await cargarDisplays()}
 
 /* ---------- Inventario ---------- */
