@@ -353,7 +353,8 @@ R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fech
  wireChart()};
 
 /* ===== Resumen del administrador ===== */
-const MESA='2026-10',MESP='2026-09',DIAS_MES=31,DIA_HOY=6;
+const HOYMX=new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'}),[AY,AM,AD]=HOYMX.split('-').map(Number);
+const MESA=HOYMX.slice(0,7),MESP=(AM===1?`${AY-1}-12`:`${AY}-${String(AM-1).padStart(2,'0')}`),DIAS_MES=new Date(AY,AM,0).getDate(),DIA_HOY=AD;
 const vmes=m=>SALES.filter(s=>s.est!=='anulada'&&s.fecha.slice(0,7)===m);
 const nDs=a=>a.reduce((x,s)=>x+s.f.length,0);
 function pendientes(){const L=[],add=(c,u,v,t,b,a)=>L.push({c,u,v,t,b,a});
@@ -403,7 +404,7 @@ function resAdm(){const vend=V.filter(v=>v.rol==='vendedor'),act=D.filter(d=>d.e
  const anul=SALES.filter(s=>s.est==='anulada'&&s.fecha.slice(0,7)===MESA).length,fp=SALES.filter(s=>s.fac==='si'&&s.est!=='anulada'),bpag=(BONOS_ON?BONO_PREV:[]).filter(r=>!r.pag).reduce((a,r)=>a+r.b,0),repMes=vend.reduce((a,v)=>a+(v.repMes||0),0);
  /* lectura del día: frases que salen de los números */
  const IS=[];
- IS.push(cobO>=cobP?['up',`Ya superaste todo septiembre (${mxn(cobP)}) con ${mxn(cobO-cobP)} de ventaja, en ${DIA_HOY} de ${DIAS_MES} días.`]:['up',`Llevas ${Math.round(cobO/Math.max(1,cobP)*100)}% de lo que cobraste en septiembre completo, con ${DIA_HOY} de ${DIAS_MES} días del mes.`]);
+ IS.push(cobP>0&&cobO>=cobP?['up',`Ya superaste todo septiembre (${mxn(cobP)}) con ${mxn(cobO-cobP)} de ventaja, en ${DIA_HOY} de ${DIAS_MES} días.`]:['up',`Llevas ${Math.round(cobO/Math.max(1,cobP)*100)}% de lo que cobraste en septiembre completo, con ${DIA_HOY} de ${DIAS_MES} días del mes.`]);
  if(worst&&worst.sd.h>=HORAS*.66)IS.push(['clock',`El dinero más antiguo en la calle es de ${esc(worst.v.n.split(' ')[0])}: ${mxn(worst.sd.m)} desde hace ${Math.floor(worst.sd.h/24)} días, con plazo de ${HORAS} h.`,'Ver saldos','data-gocob']);
  if(iv.est!=='ok')IS.push(['box',`Tienes ${iv.lib.length} libres y vendes ~${iv.dem.toFixed(1)} por semana: alcanzan para ${iv.cob===null?'—':iv.cob.toFixed(1)} semanas y producir tarda ${LEAD_D} días. Un lote de ${iv.qty} te cubre 4 semanas más el colchón.`,'Registrar lote','data-invsug']);
  const cerca=vend.filter(v=>v.e==='activo'&&sigMeta(entMesV(v.id))&&sigMeta(entMesV(v.id)).n-entMesV(v.id)<=2);
@@ -415,7 +416,7 @@ function resAdm(){const vend=V.filter(v=>v.rol==='vendedor'),act=D.filter(d=>d.e
  const cas=[['Cobrado a clientes',cobO,0,'ini'],['IVA',ivaO,1],['Costo de producción',costoO,1],['Comisiones de vendedores',comO,1],['ISR estimado',isrO,1]].concat(BONOS_ON?[['Bonos del mes',bonoP,1]]:[]);let rem=cobO;const casH=cas.map(([l,v,k,c])=>{let left=0,wd=v/Math.max(1,cobO)*100;if(k){rem-=v;left=Math.max(0,rem/Math.max(1,cobO)*100)}return `<div class="wr ${c||''}"><span>${l}</span><div class="t"><i style="left:${k?left:0}%;width:${Math.max(.6,wd)}%"></i></div><b>${k?'−':''}${mxn(Math.round(v))}</b></div>`}).join('')+`<div class="wr fin"><span>Utilidad estimada</span><div class="t"><i style="left:0;width:${Math.max(.6,Math.max(0,utilO)/Math.max(1,cobO)*100)}%"></i></div><b>${mxn(Math.round(utilO))}</b></div>`;
  /* pista del mes */
  const mxT=Math.max(proyC,cobP,cobO)*1.04||1,pO=cobO/mxT*100,pP=cobP/mxT*100,pY=proyC/mxT*100;
- const hv=cobO>=cobP?`Ya superaste todo septiembre. Al ritmo actual cerrarías octubre en <b>${mxn(proyC)}</b>.`:`Septiembre cerró en ${mxn(cobP)}. Al ritmo actual cerrarías octubre en <b>${mxn(proyC)}</b>.`;
+ const hv=cobP>0&&cobO>=cobP?`Ya superaste todo septiembre. Al ritmo actual cerrarías octubre en <b>${mxn(proyC)}</b>.`:`Septiembre cerró en ${mxn(cobP)}. Al ritmo actual cerrarías octubre en <b>${mxn(proyC)}</b>.`;
  const pend2=L.filter(x=>x.u===2).length,dec=L.filter(x=>x.u>=1).length;
  const tile=(k,q,v,d,go,extra)=>{const tg=go?'button':'div';return `<${tg} class="sm ${k}" ${go||''}><span class="q">${q}</span><span class="v">${v}</span>${extra||''}<span class="d">${d}</span>${stChip(k)}</${tg}>`};
  $('#main').innerHTML=head()+`
