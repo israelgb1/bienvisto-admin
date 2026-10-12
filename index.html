@@ -656,7 +656,9 @@ function cliDlg(id){const c=cln(id),ds=mis().filter(d=>d.cl===id);
  ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>${esc(c.n)}</h2><button class="btn s sm" data-x>Cerrar</button></div><dl class="dl"><dt>Contacto</dt><dd>${esc(c.p)}</dd><dt>WhatsApp</dt><dd>${esc(c.wa)}</dd><dt>Correo</dt><dd>${esc(c.m)}</dd></dl>
  <h3 style="font-size:18px;font-weight:500;margin:14px 0 4px">Displays</h3><div class="mini">${ds.map(d=>`<button data-d="${d.f}"><span class="folio">${d.f}</span><span style="flex:1;font-weight:600">${esc(d.su)}</span><span class="chip ${chipE(d.e)}">${d.e}</span></button>`).join('')}</div>`,true)}
 
-R.his=()=>{$('#main').innerHTML=head()+`<div class="card"><p class="sub">Cada cambio queda con fecha y persona. No se puede editar ni borrar desde aquí.</p><ul class="log">${LOG.map(l=>`<li><time>${l.t.slice(0,10)}<br>${l.t.slice(11)}</time><span><b>${esc(l.q)}</b><br>${esc(l.x)}</span></li>`).join('')}</ul></div>`};
+let HIST_N=50;
+R.his=()=>{const total=LOG.length,vis=LOG.slice(0,HIST_N);$('#main').innerHTML=head()+`<div class="card"><p class="sub">Cada cambio queda con fecha y persona. No se puede editar ni borrar desde aquí.</p><div class="fila" style="gap:8px;flex-wrap:wrap;margin:0 0 12px"><span class="sub" style="margin:0">Mostrando ${vis.length} de los últimos ${total}.</span><button class="btn s sm" data-hcsv>Descargar CSV completo</button></div><ul class="log">${vis.map(l=>`<li><time>${l.t.slice(0,10)}<br>${l.t.slice(11)}</time><span><b>${esc(l.q)}</b><br>${esc(l.x)}</span></li>`).join('')}</ul>${total>HIST_N?`<button class="btn s" data-hmas>Mostrar 50 más</button>`:''}</div>`};
+async function descargarHistorialCsv(){try{const r=await fetch('/api/auditoria/csv');if(!r.ok)throw new Error('http');const b=await r.blob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='historial-bienvisto-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}catch(e){toast('No se pudo descargar el historial.')}}
 
 /* ===== cobros ===== */
 const errRef=v=>{v=v.trim();if(!v)return'Escribe la clave de rastreo o el folio del depósito.';if(/[^A-Za-z0-9]/.test(v))return'Solo lleva letras y números. Quita espacios y símbolos.';if(v.length<8)return'Es muy corta: lleva '+v.length+' caracteres y debe tener al menos 8.';if(v.length>30)return'Es muy larga: el máximo es 30 caracteres.';return''};
@@ -969,6 +971,8 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-gobono]')){S.vista='vta';S.vsub='bonos';render();return}
  if(el=t.closest('[data-req]')){reqDlg(el.dataset.req);return}
  if(el=t.closest('[data-niv]')){const [i,n]=el.dataset.niv.split(':');nivelSet(i,n);return}
+ if(t.closest('[data-hmas]')){HIST_N+=50;R.his();return}
+ if(t.closest('[data-hcsv]')){descargarHistorialCsv();return}
  if(el=t.closest('[data-cuap]')){cuAprobar(el.dataset.cuap);return}
  if(el=t.closest('[data-cure]')){cuRechazar(el.dataset.cure);return}
  if(el=t.closest('[data-precio]')){precioDlg();return}
