@@ -267,7 +267,7 @@ const fmtAnio=d=>{const x=new Date(d+'T12:00:00');return x.getDate()+' '+MES[x.g
 const dias=d=>Math.round((HOY-new Date(d+'T12:00:00'))/864e5);
 const ERR='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6M12 16.5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const INFO='<svg viewBox="0 0 24 24" fill="none" stroke="#0E6B5C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5M12 7.5v.5"/></svg>';
-const IC={reg:'<path d="M12 5v14M5 12h14"/>',cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
+const IC={per:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',reg:'<path d="M12 5v14M5 12h14"/>',cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
 
 /* datos inventados */
 let V=[{id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'}];
@@ -338,15 +338,19 @@ document.addEventListener('keydown',e=>{const o=$('#ov');if(!o)return;
   if(!o.contains(document.activeElement)){e.preventDefault();a.focus()}else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}}});
 
 /* navegación */
-function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
- const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial'};
+function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(puede('accesos'))items.push(['per','Permisos']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
+ const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial',per:'Permisos'};
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
  const GR={res:'Operación',vta:'Dinero',cfg:'Sistema'};
  $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('');
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor'}
-const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial'};
+const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}<label class="who">Ver como <select id="yo" aria-label="Ver como">${V.filter(v=>v.e==='activo').map(v=>`<option value="${v.id}" ${v.id===S.yo?'selected':''}>${esc(v.n)} (${v.rol==='admin'?'administrador':'vendedor'})</option>`).join('')}</select></label></div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
-function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';nav();R[S.vista]()}
+function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(S.vista==='per'&&!puede('accesos'))S.vista='res';nav();R[S.vista]();aplicarPermisosUI()}
+let PERM=null;const puede=p=>!!(PERM&&PERM.permisos.includes(p));
+function aplicarPermisosUI(){if(!PERM||puede('precios'))return;['#pc','#pi','#piv','#cfgpub','#cfgrst'].forEach(q=>{const e=$(q);if(e)e.disabled=true});document.querySelectorAll('#cfgf input,#cfgf select,[data-precio]').forEach(e=>e.disabled=true)}
+const MAIN_PERM=document.getElementById('main');if(MAIN_PERM)new MutationObserver(()=>aplicarPermisosUI()).observe(MAIN_PERM,{childList:true,subtree:true});
+async function cargarPerfil(){const r=await fetch('/api/admin/me');if(r.status===403){throw Object.assign(new Error('sin acceso'),{acceso:true})}if(!r.ok)throw new Error('perfil');const me=await r.json();PERM=me;const a=V.find(x=>x.rol==='admin');if(a){a.id='adm';a.n=me.nombre;a.m=me.correo}S.yo='adm'}
 
 const R={};
 R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fecha&&dias(d.fecha)<=30&&d.e!=='libre'),lib=m.filter(d=>d.e==='libre');
@@ -842,6 +846,28 @@ function cfgPublica(){const L=cfgCambios();if(!L.length)return;const n=k=>+DR[k]
 
  log('Publicó cambios de precios y reglas: '+L.map(x=>x[1].toLowerCase()+' '+x[2]+' → '+x[3]).join('; '));
  guardarConfigSrv({precio_display:PR.p,comision_display:PR.c,promo_n:PR.pn,promo_precio:PR.pp,tope_confianza:TOPE,tope_nuevo:TOPE_NUEVO,prueba_minutos:PRUEBA_MIN,horas:HORAS,recibo_min:RECIBO_MIN,lim_rep:LIM_REP,dias_bono:DIAS_BONO,lead_d:LEAD_D,colch:COLCH,parado_d:PARADO_D,esc_bajo:ESC_BAJO,bonos_on:BONOS_ON?1:0,bono1_n:BONOS[0].n,bono1_b:BONOS[0].b,bono2_n:BONOS[1].n,bono2_b:BONOS[1].b,bono3_n:BONOS[2].n,bono3_b:BONOS[2].b}).then(()=>{DR=dr0();cfgForm();toast('Publicado. El panel del vendedor ya muestra los nuevos valores')}).catch(e=>{toast('No se publicó: '+e.message);cargarDisplays()})}
+const PERMISOS_ORDEN=['ver','cobros','vendedores','precios','accesos'];
+const PERM_ETQ={ver:'Ver el panel',cobros:'Cobros y ventas',vendedores:'Vendedores y niveles',precios:'Precios y reglas',accesos:'Personas y permisos'};
+let PERFILES=[],ACCESOS=[];
+async function cargarPermisos(){const [a,p]=await Promise.all([fetch('/api/admin/accesos'),fetch('/api/admin/perfiles')]);if(!a.ok||!p.ok)throw new Error('permisos');ACCESOS=await a.json();PERFILES=await p.json()}
+R.per=()=>{$('#main').innerHTML=head()+`<p class="sub" style="margin:0 0 12px;max-width:70ch">Aquí defines quién entra al panel y qué puede hacer. Los permisos se revisan en el servidor: aunque alguien intente otra acción, se rechaza.</p><div id="perCuerpo"><p class="sub">Cargando…</p></div>`;
+ cargarPermisos().then(pintarPermisos).catch(()=>{$('#perCuerpo').innerHTML='<p class="sub">No se pudieron cargar los permisos.</p>'})};
+function pintarPermisos(){
+ const opPerf=sel=>PERFILES.map(p=>`<option value="${esc(p.id)}" ${p.id===sel?'selected':''}>${esc(p.nombre)}</option>`).join('');
+ $('#perCuerpo').innerHTML=`<div class="card"><h2 style="font-size:19px">Personas con acceso</h2><div class="tw"><table><thead><tr><th>Nombre</th><th class="hide-m">Correo</th><th>Perfil</th><th>Estado</th></tr></thead><tbody>${ACCESOS.map(a=>`<tr><td><div class="n">${esc(a.nombre)}${a.correo===PERM.correo?' (tú)':''}</div></td><td class="hide-m">${esc(a.correo)}</td><td><select class="f" data-peril="${esc(a.correo)}" aria-label="Perfil de ${esc(a.nombre)}">${opPerf(a.perfil)}</select></td><td><label style="display:flex;gap:8px;align-items:center;min-height:36px"><input type="checkbox" data-pact="${esc(a.correo)}" ${a.activo?'checked':''}>${a.activo?'Activo':'Inactivo'}</label></td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card" style="margin-top:12px"><h2 style="font-size:19px">Dar acceso a alguien</h2><p class="sub">Esa persona debe entrar al panel con este correo. Cloudflare Access también tiene que permitirlo.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 12px"><div class="fld"><label class="lbl" for="ncor">Correo</label><input class="f" id="ncor" type="email"></div><div class="fld"><label class="lbl" for="nnom">Nombre</label><input class="f" id="nnom"></div><div class="fld"><label class="lbl" for="nper">Perfil</label><select class="f" id="nper">${opPerf('operador')}</select></div></div><button class="btn p" id="nacc">Dar acceso</button></div>
+ <h2 style="font-size:20px;font-weight:500;margin:20px 0 8px">Perfiles</h2>${PERFILES.map(p=>`<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:18px">${esc(p.nombre)}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 12px">${PERMISOS_ORDEN.map(k=>`<label style="display:flex;gap:8px;align-items:center;min-height:36px"><input type="checkbox" data-pperm="${esc(p.id)}:${k}" ${p.permisos.includes(k)?'checked':''} ${p.id==='dueno'?'disabled':''}>${PERM_ETQ[k]}</label>`).join('')}</div>${p.id==='dueno'?'<p class="sub" style="margin:6px 0 0">El perfil de dueño siempre tiene todos los permisos.</p>':`<button class="btn s" data-psave="${esc(p.id)}" style="margin-top:10px">Guardar perfil</button>`}</div>`).join('')}`;
+ const recargar=(msg)=>cargarPermisos().then(()=>{pintarPermisos();if(msg)toast(msg)}).catch(e=>toast(e.message));
+ const err=(e)=>{toast(e.message);recargar()};
+ $('#perCuerpo').onchange=e=>{const t=e.target;
+  if(t.dataset.peril){apiJson('/api/admin/accesos/'+encodeURIComponent(t.dataset.peril),'PATCH',{perfil:t.value}).then(()=>recargar('Perfil actualizado')).catch(err)}
+  else if(t.dataset.pact){apiJson('/api/admin/accesos/'+encodeURIComponent(t.dataset.pact),'PATCH',{activo:t.checked}).then(()=>recargar(t.checked?'Acceso activado':'Acceso desactivado')).catch(err)}};
+ $('#perCuerpo').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='nacc'){const correo=$('#ncor').value.trim(),nombre=$('#nnom').value.trim(),perfil=$('#nper').value;
+   apiJson('/api/admin/accesos','POST',{correo,nombre,perfil}).then(()=>recargar('Acceso creado para '+correo)).catch(err)}
+  else if(b.dataset.psave){const id=b.dataset.psave;const permisos=[...document.querySelectorAll('[data-pperm^="'+id+':"]')].filter(x=>x.checked).map(x=>x.dataset.pperm.split(':')[1]);
+   apiJson('/api/admin/perfiles/'+encodeURIComponent(id),'PUT',{permisos}).then(()=>recargar('Perfil guardado')).catch(err)}};
+};
 R.cfg=()=>{DR=DR||dr0();DR=dr0();
  $('#main').innerHTML=head()+`<p class="sub" style="margin:0 0 12px;max-width:70ch">Aquí defines todos los importes y reglas que ve el vendedor. Al publicar, cambian en su panel en todos los textos: botones, avisos, ayuda y recibos. A la derecha puedes leer, pantalla por pantalla, el texto que ve cada vendedor.</p><div class="grid2" style="align-items:start"><div id="cfgf"></div><div class="card" style="position:sticky;top:16px"><h2 style="font-size:19px">Textos que ve el vendedor</h2><p class="sub">Lee la app real de un vendedor con sus datos y lista el texto de cada pantalla. Los importes son los publicados.</p><div class="fld"><label class="lbl" for="txtv">Vendedor</label><select class="f" id="txtv"></select></div><button class="btn s" id="txtgo">Leer textos</button><div id="txt-out" style="margin-top:12px"></div></div></div>`;
  cfgForm();const vs=V.filter(v=>v.rol==='vendedor');$('#txtv').innerHTML=vs.length?vs.map(v=>`<option value="${esc(v.id)}">${esc(v.n)}${v.e==='inactivo'?' (inactivo)':''}</option>`).join(''):'<option value="">Sin vendedores</option>';
@@ -1201,7 +1227,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='TH')e.target.click()});
 let ordenesBusy=false;
 new MutationObserver(()=>{if(ordenesBusy)return;ordenesBusy=true;try{aplicarOrdenes()}finally{ordenesBusy=false}}).observe($('#main'),{childList:true,subtree:true});
-cargarDisplays().catch(()=>toast('No se pudo cargar el inventario del servidor.'));render();
+cargarPerfil().then(async()=>{try{await cargarDisplays()}catch(e){toast('No se pudo cargar el inventario del servidor.')}render()},e=>{$('#main').innerHTML=e.acceso?'<div class="card"><h2 style="font-size:19px">Sin acceso</h2><p class="sub">Tu correo no tiene acceso a este panel. Pide a Isra que te lo dé.</p></div>':'<div class="card"><h2 style="font-size:19px">No se pudo verificar tu acceso</h2><p class="sub">Recarga la página en un momento.</p></div>'});
 })();
 </script>
 
