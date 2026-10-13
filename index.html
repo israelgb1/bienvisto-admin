@@ -908,7 +908,8 @@ async function auditarTextos(){const b=$('#txtgo'),out=$('#txt-out'),id=$('#txtv
  const cargada=new Promise(r=>fr.onload=r);document.body.appendChild(fr);
  try{
   const ap=await fetch('/api/admin/app-vendedor');const apj=ap.ok?await ap.json():{error:'No se pudo obtener la app de vendedores'};if(apj.error)throw new Error(apj.error);
-  fr.srcdoc=apj.html.replace(/\/api\/vendedor\//g,'/api/admin/vista/'+encodeURIComponent(id)+'/vendedor/');
+  const srcApp=apj.html.replace(/\/api\/vendedor\//g,'/api/admin/vista/'+encodeURIComponent(id)+'/vendedor/');
+  fr.srcdoc=srcApp;
   const cuando=new Date(apj.obtenida).toLocaleString('es-MX',{timeZone:'America/Mexico_City'});
   await cargada;const w=fr.contentWindow;let ok=false;
   for(let i=0;i<40&&!ok;i++){await esperar(150);const a=w.document.getElementById('app');ok=!!(a&&a.innerText.trim())}
@@ -916,7 +917,11 @@ async function auditarTextos(){const b=$('#txtgo'),out=$('#txt-out'),id=$('#txtv
   const res=[];
   for(const h of PANTALLAS_VEND){w.location.hash=h;await esperar(500);
    const a=w.document.getElementById('app');res.push({h,t:a?a.innerText.split('\n').map(x=>x.trim()).filter(Boolean):[]})}
-  out.innerHTML=`<p class="sub" style="margin:0 0 6px">App leída: huella <b>${esc(apj.huella)}</b> · leída el ${esc(cuando)}</p>`+res.map(r=>`<details style="border-top:1px solid var(--borde);padding:8px 0"><summary style="cursor:pointer;font-weight:600">${esc(r.h)} · ${r.t.length} textos</summary>${r.t.length?`<ul style="margin:6px 0 0;padding-left:18px">${r.t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</details>`).join('');
+  out.innerHTML=`<p class="sub" style="margin:0 0 6px">App leída: huella <b>${esc(apj.huella)}</b> · leída el ${esc(cuando)}</p>`+`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 8px"><label for="prevp" style="font-weight:600">Ver pantalla</label><select class="f" id="prevp" style="max-width:260px">${PANTALLAS_VEND.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('')}</select></div>`+`<iframe id="prevf" title="Vista previa de la app del vendedor" style="display:block;width:390px;max-width:100%;height:680px;border:1px solid var(--borde);border-radius:16px;background:#fff"></iframe>`+res.map(r=>`<details style="border-top:1px solid var(--borde);padding:8px 0"><summary style="cursor:pointer;font-weight:600">${esc(r.h)} · ${r.t.length} textos</summary>${r.t.length?`<ul style="margin:6px 0 0;padding-left:18px">${r.t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</details>`).join('');
+  const pf=out.querySelector('#prevf'),ps=out.querySelector('#prevp');
+  pf.onload=()=>{try{pf.contentWindow.location.hash=ps.value}catch(e){}};
+  ps.onchange=()=>{try{pf.contentWindow.location.hash=ps.value}catch(e){}};
+  pf.srcdoc=srcApp;
  }catch(err){out.innerHTML='<p class="sub">Error al leer: '+esc(err.message||String(err))+'</p>'}
  finally{fr.remove();b.disabled=false}}
 
