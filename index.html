@@ -70,6 +70,11 @@ th{font:600 12.5px/1.2 var(--fb);letter-spacing:.06em;text-transform:uppercase;c
 td{padding:12px 14px;border-top:1px solid var(--borde);vertical-align:middle}
 tr.row{cursor:pointer}tr.row:hover td{background:#F6FAF8}
 td .n{font-weight:600;line-height:1.25}td .m{font-size:13px;color:var(--muted);line-height:1.3}
+th .rz{position:absolute;top:0;right:0;bottom:0;width:10px;cursor:col-resize;touch-action:none;z-index:1}
+th .rz:hover,th .rz.on{background:rgba(31,74,58,.16)}
+th{position:relative}
+table.fijo{table-layout:fixed;width:100%}
+table.fijo td,table.fijo th{overflow:hidden;text-overflow:ellipsis}
 .folio{font:600 18px/1 var(--fd);letter-spacing:.08em;color:var(--verde)}
 .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
@@ -1062,7 +1067,11 @@ function aplicarOrdenes(){
     const tb=t.tBodies[0],filas=[...tb.rows],k=ordKey(t),col=ORDEN[k];
     filas.forEach((r,i)=>{if(!('oi' in r.dataset))r.dataset.oi=i});
     const ths=t.tHead?[...t.tHead.rows[0].cells]:[];
-    ths.forEach((th,i)=>{if(!th.textContent.trim())return;th.tabIndex=0;th.style.cursor='pointer';th.setAttribute('aria-sort',col===i?'ascending':'none');th.classList.toggle('ord',col===i)});
+    const anchos=ANCHOS[k]||{};let fijo=false;
+    ths.forEach((th,i)=>{if(th.textContent.trim()){th.tabIndex=0;th.style.cursor='pointer';th.setAttribute('aria-sort',col===i?'ascending':'none');th.classList.toggle('ord',col===i)}
+      if(!th.querySelector('.rz')){const h=document.createElement('span');h.className='rz';h.setAttribute('aria-hidden','true');th.appendChild(h)}
+      if(anchos[i]){th.style.width=anchos[i]+'px';fijo=true}});
+    t.classList.toggle('fijo',fijo);
     let ord;
     if(col===undefined||filas.length<2||filas.some(r=>r.cells.length!==ths.length)){ord=filas.slice().sort((a,b)=>a.dataset.oi-b.dataset.oi)}
     else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col),nx=numCelda(x),ny=numCelda(y);
@@ -1070,7 +1079,24 @@ function aplicarOrdenes(){
     if(ord.some((r,i)=>r!==filas[i])) ord.forEach(r=>tb.appendChild(r));
   });
 }
+// Ancho de columnas: arrastra el borde derecho del encabezado. Se guarda en este navegador.
+let ANCHOS={};
+try{ANCHOS=JSON.parse(localStorage.getItem('bv-admin-anchos')||'{}')||{}}catch(_){ANCHOS={}}
+function guardarAnchos(){try{localStorage.setItem('bv-admin-anchos',JSON.stringify(ANCHOS))}catch(_){}}
+let RZ=null,rzFin=0;
+document.addEventListener('pointerdown',e=>{const h=e.target.closest&&e.target.closest('th .rz');if(!h)return;e.preventDefault();e.stopPropagation();
+  const th=h.parentElement,t=th.closest('table'),k=ordKey(t);
+  // La primera vez que se toca una columna, fija el ancho actual de todas para que las demás no cambien.
+  if(!ANCHOS[k]){ANCHOS[k]={};[...t.tHead.rows[0].cells].forEach((c,i)=>{ANCHOS[k][i]=Math.round(c.getBoundingClientRect().width)});
+    [...t.tHead.rows[0].cells].forEach((c,i)=>{c.style.width=ANCHOS[k][i]+'px'});t.classList.add('fijo')}
+  RZ={th,h,x:e.clientX,w:th.getBoundingClientRect().width,t,i:th.cellIndex,w2:null};
+  try{h.setPointerCapture(e.pointerId)}catch(_){}h.classList.add('on')});
+document.addEventListener('pointermove',e=>{if(!RZ)return;const w=Math.max(40,Math.round(RZ.w+e.clientX-RZ.x));RZ.w2=w;RZ.th.style.width=w+'px';RZ.t.classList.add('fijo')});
+function finRZ(){if(!RZ)return;const k=ordKey(RZ.t);const w=RZ.w2||Math.round(RZ.w);ANCHOS[k]=ANCHOS[k]||{};ANCHOS[k][RZ.i]=w;guardarAnchos();RZ.h.classList.remove('on');RZ=null;rzFin=Date.now()}
+document.addEventListener('pointerup',finRZ);
+document.addEventListener('pointercancel',finRZ);
 document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('.rz'))return;if(Date.now()-rzFin<400)return;
   const th=e.target.closest('th');if(!th||!th.parentElement||!th.closest('thead'))return;
   const t=th.closest('table');if(!t||!tablasOrdenables().includes(t)||!th.textContent.trim())return;
   const k=ordKey(t),c=th.cellIndex;
