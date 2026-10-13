@@ -318,10 +318,10 @@ const facTxt=s=>s.fac==='emitida'?'Factura emitida':s.fac==='si'?'Pide factura'+
 const com=s=>s.com!=null?s.com:s.f.length*s.c,tot=s=>s.tot!=null?s.tot:Math.floor(s.f.length/s.pn)*s.pp+(s.f.length%s.pn)*s.p,ent=s=>s.ent!=null?s.ent:tot(s)-com(s),promoS=s=>Math.floor(s.f.length/s.pn);
 const rest=s=>ent(s)-(s.abono||0);
 const cust=s=>(s.est==='cobrada'||(s.est==='entregada'&&rest(s)>0.001))&&!s.imp;
-const enCustodiaAdm=s=>['pendp','rev','cobrada','entregada'].includes(s.est)&&rest(s)>0.001;
-const saldoV=id=>{const v=V.find(x=>x.id===id),tope=(v&&v.tope)||TOPE,ss=SALES.filter(s=>s.v===id),m=ss.filter(enCustodiaAdm).reduce((a,s)=>a+rest(s),0),h=Math.max(0,...ss.filter(cust).map(s=>s.h)),
+const enCustodiaAdm=s=>['cobrada','entregada'].includes(s.est)&&rest(s)>0.001;
+const saldoV=id=>{const v=V.find(x=>x.id===id),tope=(v&&v.tope)||TOPE,ss=SALES.filter(s=>s.v===id),m=ss.filter(enCustodiaAdm).reduce((a,s)=>a+rest(s),0),rv=ss.filter(s=>s.est==='rev').reduce((a,s)=>a+rest(s),0),h=Math.max(0,...ss.filter(cust).map(s=>s.h)),
   deuda=ss.filter(s=>s.imp&&(s.est==='pendp'||s.est==='cobrada'||s.est==='rev')).reduce((a,s)=>a+rest(s),0),aj=ss.filter(s=>s.est==='anulada'&&s.aj&&!s.ajA).reduce((a,s)=>a+s.aj,0);
- return {m,aj,deuda,tope,net:Math.max(0,m-aj),h,b:deuda>0?'deuda':h>=HORAS?'horas':(m+(PR.p-PR.c)>tope?'tope':'')}};
+ return {m,rv,aj,deuda,tope,net:Math.max(0,m-aj),h,b:deuda>0?'deuda':h>=HORAS?'horas':(m+rv+(PR.p-PR.c)>tope?'tope':'')}};
 const calc=(p,c,costo,isr)=>{const base=p/(1+PR.iva/100),iva=p-base,im=base*isr/100;return {base,iva,im,ut:p-iva-costo-c-im,ent:p-c}};
 const hace=h=>h<1?'Ahora':h<24?'Hace '+h+' h':h<48?'Ayer':'Hace '+Math.floor(h/24)+' días';
 const LOG=[];
@@ -354,7 +354,7 @@ function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Cliente
  $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('');
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor'}
 const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
-function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}<label class="who">Ver como <select id="yo" aria-label="Ver como">${V.filter(v=>v.e==='activo').map(v=>`<option value="${v.id}" ${v.id===S.yo?'selected':''}>${esc(v.n)} (${v.rol==='admin'?'administrador':'vendedor'})</option>`).join('')}</select></label></div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
+function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}</div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
 function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
 let PERM=null;const puede=p=>!!(PERM&&Array.isArray(PERM.permisos)&&PERM.permisos.includes(p));
 const PERM_TAB={res:'ver_resumen',dis:'ver_inventario',cli:'ver_inventario',inv:'ver_inventario',reg:'inventario_registrar',ven:'ver_vendedores',vta:'ver_cobros',cfg:['precios_venta','costos_impuestos','reglas_vendedores'],his:'ver_historial',per:'accesos'};
@@ -376,7 +376,7 @@ R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fech
  const deu=admin()?V.filter(v=>v.rol==='vendedor'&&saldoV(v.id).deuda>0):[],cus=admin()?V.filter(v=>v.cuP):[],venc=admin()?V.filter(v=>v.rol==='vendedor'&&saldoV(v.id).b==='horas'):[],sols=admin()?SALES.filter(s=>s.sol&&s.est!=='anulada'):[],rqs=admin()?reqPend():[],bps=admin()&&BONOS_ON?BONO_PREV.filter(r=>!r.pag):[];
  const vend=V.filter(v=>v.rol==='vendedor');const max=Math.max(1,...vend.map(v=>D.filter(d=>d.v===v.id&&d.e!=='libre'&&dias(d.fecha)<=30).length));
  const fpend=admin()?SALES.filter(s=>s.fac==='si'&&s.est!=='anulada'):[];
- $('#main').innerHTML=head()+(fpend.length?`<div class="banner warn">${INFO}<span>${fpend.length} venta${fpend.length===1?'':'s'} piden factura y aún no la emites.<button data-gofac>Ver ventas</button></span></div>`:'')+cus.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} pide cambiar su cuenta de cobro a ${esc(bancoDe(v.cuP.clabe))}.<button data-vd="${v.id}">Revisar</button></span></div>`).join('')+deu.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} tiene un adeudo de ${mxn(saldoV(v.id).deuda)} por impago.<button data-gocob>Ver saldos</button></span></div>`).join('')+venc.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} tiene ${mxn(saldoV(v.id).m)} sin entregar desde hace ${Math.floor(saldoV(v.id).h/24)} días.<button data-gocob>Ver saldos</button></span></div>`).join('')+bps.map(r=>`<div class="banner warn">${INFO}<span>Falta pagar el bono de ${r.mes.toLowerCase()} a ${esc(vn(r.v))}: ${mxn(r.b)}. El plazo era el ${DIAS_BONO} de ${nomMes(MESA)}.<button data-gobono>Ver bonos</button></span></div>`).join('')+rqs.map(q=>`<div class="banner warn">${INFO}<span>${esc(vn(q.v))} pide ${q.tipo==='reponer'?'reponer':'cambiar de negocio'} ${q.f} (${esc(q.mot.toLowerCase())}).<button data-req="${q.id}">Revisar</button></span></div>`).join('')+sols.map(s=>`<div class="banner warn">${INFO}<span>${esc(vn(s.v))} pide anular la venta BV-${s.rn} (${esc(s.solM)}).<button data-sale="${s.id}">Revisar</button></span></div>`).join('')+(huér.length?`<div class="banner warn">${INFO}<span>${huér.length} displays libres siguen a nombre de ${esc(vn(huér[0].v))}, que ya no está activo.<button data-reasignar="${huér[0].v}">Reasignarlos</button></span></div>`:'')+`
+ $('#main').innerHTML=head()+(fpend.length?`<div class="banner warn">${INFO}<span>${fpend.length} venta${fpend.length===1?'':'s'} piden factura y aún no la emites.<button data-gofac>Ver ventas</button></span></div>`:'')+cus.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} pide cambiar su cuenta de cobro a ${esc(bancoDe(v.cuP.clabe))}.<button data-vd="${v.id}">Revisar</button></span></div>`).join('')+deu.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} tiene un adeudo de ${mxn(saldoV(v.id).deuda)} por impago.<button data-gocob>Ver saldos</button></span></div>`).join('')+venc.map(v=>`<div class="banner warn">${INFO}<span>${esc(v.n)} tiene ${mxn(saldoV(v.id).m)} sin entregar desde hace ${Math.floor(saldoV(v.id).h/24)} días.<button data-gocob>Ver saldos</button></span></div>`).join('')+bps.map(r=>`<div class="banner warn">${INFO}<span>Falta pagar el bono de ${r.mes.toLowerCase()} a ${esc(vn(r.v))}: ${mxn(r.b)}. El plazo era el ${DIAS_BONO} de ${nomMes(MESA)}.<button data-gobono>Ver bonos</button></span></div>`).join('')+rqs.map(q=>`<div class="banner warn">${INFO}<span>${esc(vn(q.v))} pide ${q.tipo==='reponer'?'reponer':'cambiar de negocio'} ${q.f} (${esc(q.mot.toLowerCase())}).<button data-req="${q.id}">Revisar</button></span></div>`).join('')+sols.map(s=>`<div class="banner warn">${INFO}<span>${esc(vn(s.v))} pide anular la venta VN-${s.rn} (${esc(s.solM)}).<button data-sale="${s.id}">Revisar</button></span></div>`).join('')+(huér.length?`<div class="banner warn">${INFO}<span>${huér.length} displays libres siguen a nombre de ${esc(vn(huér[0].v))}, que ya no está activo.<button data-reasignar="${huér[0].v}">Reasignarlos</button></span></div>`:'')+`
  <div class="kpis"><div class="kpi"><b>${act.length}</b><span>displays activos</span></div><div class="kpi"><b>${n30.length}</b><span>activados en 30 días</span></div><div class="kpi"><b>${esc7.toLocaleString('es-MX')}</b><span>escaneos de la semana</span></div><div class="kpi"><b>${lib.length}</b><span>${admin()?'libres en inventario':'libres contigo'}</span></div></div>
  ${moneyKpis()}
  <div class="grid2"><div class="card"><h2>Escaneos por día</h2><p class="sub">Últimos 30 días, todos los displays activos</p><div class="chart" id="ch"><div class="ro" id="ro" aria-live="polite">&nbsp;</div>${chart()}</div></div>
@@ -394,9 +394,9 @@ function pendientes(){const L=[],add=(c,u,v,t,b,a)=>L.push({c,u,v,t,b,a});
   if(sd.deuda>0)add('Cobros',2,'vta',`<b>${esc(v.n)}</b> tiene un adeudo de ${mxn(sd.deuda)} por impago.`,'Ver saldos','data-gocob');
   else if(sd.b==='horas')add('Cobros',2,'vta',`<b>${esc(v.n)}</b> lleva ${Math.floor(sd.h/24)} días con ${mxn(sd.m)} sin entregar.`,'Ver saldos','data-gocob');
   else if(sd.b==='tope')add('Cobros',1,'vta',`<b>${esc(v.n)}</b> llegó a su tope de ${mxn(sd.tope)} y no puede activar hasta entregar.`,'Ver saldos','data-gocob')});
- SALES.filter(s=>s.est==='rev').forEach(s=>add('Cobros',1,'vta',`<b>${esc(vn(s.v))}</b> avisó que entregó ${mxn(rest(s))} (BV-${s.rn}).`,'Confirmar',`data-sale="${s.id}"`));
+ SALES.filter(s=>s.est==='rev').forEach(s=>add('Cobros',1,'vta',`<b>${esc(vn(s.v))}</b> avisó que entregó ${mxn(rest(s))} (VN-${s.rn}).`,'Confirmar',`data-sale="${s.id}"`));
  AVISOS.filter(a=>a.estado==='pendiente').forEach(a=>add('Cobros',1,'vta',`<b>${esc(a.vendedor)}</b> avisó que entregó ${mxn(a.monto)} en ${a.metodo==='efectivo'?'efectivo':'transferencia'}.`,'Revisar',`data-aviso="${a.id}"`));
- SALES.filter(s=>s.sol&&s.est!=='anulada').forEach(s=>add('Solicitudes',1,'vta',`<b>${esc(vn(s.v))}</b> pide anular BV-${s.rn}: ${esc(s.solM.toLowerCase())}.`,'Revisar',`data-sale="${s.id}"`));
+ SALES.filter(s=>s.sol&&s.est!=='anulada').forEach(s=>add('Solicitudes',1,'vta',`<b>${esc(vn(s.v))}</b> pide anular VN-${s.rn}: ${esc(s.solM.toLowerCase())}.`,'Revisar',`data-sale="${s.id}"`));
  reqPend().forEach(q=>add('Solicitudes',1,'dis',`<b>${esc(vn(q.v))}</b> pide ${q.tipo==='reponer'?'reponer':'cambiar de negocio'} ${q.f}: ${esc(q.mot.toLowerCase())}.`,'Revisar',`data-req="${q.id}"`));
  V.filter(v=>v.cuP).forEach(v=>add('Cuentas',1,'ven',`<b>${esc(v.n)}</b> pide cambiar su cuenta de cobro a ${esc(bancoDe(v.cuP.clabe))}.`,'Revisar',`data-vd="${v.id}"`));
  (BONOS_ON?BONO_PREV:[]).filter(r=>!r.pag).forEach(r=>add('Bonos',1,'vta',`Falta pagar a <b>${esc(vn(r.v))}</b> el bono de ${r.mes.toLowerCase()}: ${mxn(r.b)}. Se paga a más tardar el día ${DIAS_BONO}.`,'Ver bonos','data-gobono'));
@@ -584,7 +584,7 @@ const get=f=>D.find(d=>d.f===f);
 function dispDlg(f){const d=get(f),c=d.cl?cln(d.cl):null;
  const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><span class="folio" style="font-size:30px">${d.f}</span><button class="btn s sm" data-x>Cerrar</button></div><span class="chip ${chipE(d.e)}">${d.e}</span>
  <h2 style="font-size:22px;margin-top:10px">${esc(d.su||'Libre, sin negocio')}</h2>
- <dl class="dl"><dt>Enlace</dt><dd>ir.bienvisto.com.mx/${d.f.toLowerCase()}</dd>${d.lote?`<dt>Lote</dt><dd>${d.lote} · alta ${fmt(d.alta)}</dd>`:''}${c?`<dt>Negocio</dt><dd>${esc(c.n)}</dd><dt>Cliente</dt><dd>${esc(c.p)}${c.wa?' · '+esc(c.wa):''}</dd>`:''}<dt>Vendedor</dt><dd>${esc(vn(d.v))}</dd>${(s=>s?`<dt>Cobro</dt><dd>${mxn(s.p)} · ${LAB[s.m]} · BV-${s.rn}</dd>`:'')(SALES.find(x=>x.f.includes(d.f)&&x.est!=='anulada'))}${d.fecha?`<dt>Activado</dt><dd>${fmt(d.fecha)}</dd>`:''}${d.rec?'<dt>Aviso</dt><dd>Retirado: por recuperar con el vendedor</dd>':''}${d.e==='activo'?`<dt>Escaneos 7 días</dt><dd>${d.esc}</dd>`:''}${d.e==='prueba'&&d.pr?`<dt>En prueba con</dt><dd>${esc(d.pr.neg)} · quedan ${d.pr.min} min</dd><dt>Qué pasa</dt><dd>Si no se cobra en ese tiempo, queda libre solo y no se guarda ningún dato del cliente.</dd>`:''}</dl>
+ <dl class="dl"><dt>Enlace</dt><dd>ir.bienvisto.com.mx/${d.f.toLowerCase()}</dd>${d.lote?`<dt>Lote</dt><dd>${d.lote} · alta ${fmt(d.alta)}</dd>`:''}${c?`<dt>Negocio</dt><dd>${esc(c.n)}</dd><dt>Cliente</dt><dd>${esc(c.p)}${c.wa?' · '+esc(c.wa):''}</dd>`:''}<dt>Vendedor</dt><dd>${esc(vn(d.v))}</dd>${(s=>s?`<dt>Cobro</dt><dd>${mxn(s.p)} · ${LAB[s.m]} · VN-${s.rn}</dd>`:'')(SALES.find(x=>x.f.includes(d.f)&&x.est!=='anulada'))}${d.fecha?`<dt>Activado</dt><dd>${fmt(d.fecha)}</dd>`:''}${d.rec?'<dt>Aviso</dt><dd>Retirado: por recuperar con el vendedor</dd>':''}${d.e==='activo'?`<dt>Escaneos 7 días</dt><dd>${d.esc}</dd>`:''}${d.e==='prueba'&&d.pr?`<dt>En prueba con</dt><dd>${esc(d.pr.neg)} · quedan ${d.pr.min} min</dd><dt>Qué pasa</dt><dd>Si no se cobra en ese tiempo, queda libre solo y no se guarda ningún dato del cliente.</dd>`:''}</dl>
  ${reqPend().filter(q=>q.f===d.f).map(q=>`<div class="step" style="background:#FCEFD3"><b>Solicitud pendiente:</b> ${q.tipo==='reponer'?'reposición':'cambio de negocio'} (${esc(q.mot)}) de ${esc(vn(q.v))}.<br><button class="btn p sm" style="margin-top:8px" data-req="${q.id}">Revisar</button></div>`).join('')}
  ${(s=>s?`<div class="row2" style="margin:0 0 8px"><button class="btn s sm" data-sale="${s.id}">Ver venta y recibo</button></div>`:'')(SALES.find(x=>x.f.includes(d.f)&&x.est!=='anulada'))}
  <div class="fld"><label class="lbl" for="dnegocio">Negocio asignado</label><div class="row2" style="margin:0"><input class="f" id="dnegocio" maxlength="200" value="${esc(d.su||'')}" placeholder="Nombre del negocio"><button class="btn p sm" id="dnegsave">Guardar negocio</button><button class="btn s sm" id="dnegquit">Quitar</button></div></div><div class="fld"><label class="lbl" for="destado">Cambiar estado</label><div class="row2" style="margin:0"><select class="f" id="destado">${['libre','activo','pausa','retirado','adeudo','prueba'].map(e=>`<option value="${e}" ${d.e===e?'selected':''}>${e}</option>`).join('')}</select><button class="btn p sm" id="destsave">Guardar estado</button></div></div>
@@ -730,14 +730,14 @@ R.vta=()=>{const adm=admin();if(!adm)S.vsub='ventas';if(!BONOS_ON&&S.vsub==='bon
  const tabs=adm?`<div class="tabs2" role="group" aria-label="Sección de cobros">${[['ventas','Ventas'],['saldos','Saldos']].concat(BONOS_ON?[['bonos','Bonos']]:[],[['precios','Precios']]).map(([k,t])=>`<button data-vsub="${k}" aria-pressed="${S.vsub===k}">${t}</button>`).join('')}</div>`:'';
  $('#main').innerHTML=head()+tabs+'<div id="sub"></div>';({ventas:cobVentas,saldos:cobSaldos,bonos:cobBonos,precios:cobPrecios})[S.vsub]()};
 
-const textoVenta=s=>{const c=cln(s.cl);return ['BV-'+s.rn,s.f.join(' '),c?[c.n,c.p,c.wa||''].join(' '):'',vn(s.v),LAB[s.m]||''].join(' ')};
+const textoVenta=s=>{const c=cln(s.cl);return ['VN-'+s.rn,s.f.join(' '),c?[c.n,c.p,c.wa||''].join(' '):'',vn(s.v),LAB[s.m]||''].join(' ')};
 function cobVentas(){const adm=admin(),mine=adm?SALES:SALES.filter(s=>s.v===S.yo);
  const f=S.fs||'todas',okF=s=>f==='todas'||(f==='entregar'&&(s.est==='cobrada'||s.est==='rev'))||(f==='liq'&&s.est==='entregada')||(f==='anul'&&s.est==='anulada')||(f==='sol'&&s.sol&&s.est!=='anulada')||(f==='fac'&&s.fac==='si');
  const rows=mine.filter(okF).filter(s=>buscaCoincide(textoVenta(s),S.cobqV||'')).sort((a,b)=>a.h-b.h);let top='';
  if(adm){const vm=vmes(MESA),ivaM=m=>vm.filter(s=>s.m===m).reduce((a,s)=>a+tot(s)*PR.iva/(100+PR.iva),0),cobM=m=>vm.filter(s=>s.m===m).reduce((a,s)=>a+tot(s),0);top=`<div class="kpis m">${['efectivo','transferencia'].map(m=>`<div class="kpi"><b>${mxn(Math.round(ivaM(m)*100)/100)}</b><span>IVA de ${nomMes(MESA)} cobrado por ${m==='efectivo'?'efectivo':'transferencia'} · ventas ${mxn(cobM(m))} · IVA ${PR.iva}%</span></div>`).join('')}</div>`}
  if(!adm){const sd=saldoV(S.yo),ok=mine.filter(s=>s.est!=='anulada');top=`<div class="kpis m"><div class="kpi"><b>${mxn(ok.reduce((a,s)=>a+com(s),0))}</b><span>comisión ganada (${ok.reduce((a,s)=>a+s.f.length,0)} displays)</span></div><div class="kpi"><b>${mxn(sd.net)}</b><span>debes entregar a Bien Visto · tope ${mxn(sd.m)} de ${mxn(sd.tope)}</span></div></div>`}
  $('#sub').innerHTML=top+`<div class="tbar"><select id="fs" aria-label="Filtrar ventas">${[['todas','Todas las ventas'],['entregar','Por entregar'],['liq','Liquidadas'],['sol','Piden anulación'],['fac','Piden factura'],['anul','Anuladas']].map(([k,t])=>`<option value="${k}" ${f===k?'selected':''}>${t}</option>`).join('')}</select><input type="search" id="cobqV" placeholder="Buscar recibo, displays, cliente, WhatsApp o vendedor" aria-label="Buscar ventas" value="${esc(S.cobqV||'')}"></div>
- <div class="tw"><table><thead><tr><th>Recibo</th><th>Displays</th><th class="hide-m">Cliente</th>${adm?'<th class="hide-m">Vendedor</th>':''}<th class="hide-m">Cobro</th><th class="num">Total</th><th class="num hide-m">${adm?'Comisión':'Mi comisión'}</th>${adm?'<th class="num hide-m">Entrega</th>':''}<th>Estado</th></tr></thead><tbody>${rows.length?rows.map(s=>`<tr class="row" data-sale="${s.id}"><td><div class="n">BV-${s.rn}</div><div class="m">${fmt(s.fecha)}</div></td><td><span class="folio" style="font-size:15px">${s.f.join(' ')}</span></td><td class="hide-m">${esc(cln(s.cl).n)}</td>${adm?`<td class="hide-m">${esc(vn(s.v))}</td>`:''}<td class="hide-m">${LAB[s.m]}</td><td class="num">${mxn(tot(s))}</td><td class="num hide-m">${mxn(com(s))}</td>${adm?`<td class="num hide-m">${mxn(ent(s))}</td>`:''}<td>${chipS(s)}</td></tr>`).join(''):`<tr><td colspan="9"><div class="empty"><b>Ninguna venta coincide.</b>Cambia el filtro.</div></td></tr>`}</tbody></table></div>`;
+ <div class="tw"><table><thead><tr><th>Recibo</th><th>Displays</th><th class="hide-m">Cliente</th>${adm?'<th class="hide-m">Vendedor</th>':''}<th class="hide-m">Cobro</th><th class="num">Total</th><th class="num hide-m">${adm?'Comisión':'Mi comisión'}</th>${adm?'<th class="num hide-m">Entrega</th>':''}<th>Estado</th></tr></thead><tbody>${rows.length?rows.map(s=>`<tr class="row" data-sale="${s.id}"><td><div class="n">VN-${s.rn}</div><div class="m">${fmt(s.fecha)}</div></td><td><span class="folio" style="font-size:15px">${s.f.join(' ')}</span></td><td class="hide-m">${esc(cln(s.cl).n)}</td>${adm?`<td class="hide-m">${esc(vn(s.v))}</td>`:''}<td class="hide-m">${LAB[s.m]}</td><td class="num">${mxn(tot(s))}</td><td class="num hide-m">${mxn(com(s))}</td>${adm?`<td class="num hide-m">${mxn(ent(s))}</td>`:''}<td>${chipS(s)}</td></tr>`).join(''):`<tr><td colspan="9"><div class="empty"><b>Ninguna venta coincide.</b>Cambia el filtro.</div></td></tr>`}</tbody></table></div>`;
  $('#fs').onchange=e=>{S.fs=e.target.value;cobVentas()};$('#cobqV').oninput=e=>{S.cobqV=e.target.value;resetPag();const p=e.target.selectionStart;cobVentas();const i=$('#cobqV');i.focus();i.setSelectionRange(p,p)}}
 
 function cobSaldos(){const vs=V.filter(v=>v.rol==='vendedor'),sd=vs.map(v=>({v,s:saldoV(v.id)})),sdQ=sd.filter(x=>buscaCoincide(textoVen(x.v),S.cobqS||''));
@@ -897,9 +897,24 @@ function pintarPermisos(){
   else if(b.dataset.psave){apiJson('/api/admin/accesos/'+encodeURIComponent(b.dataset.psave),'PATCH',{permisos:marcados(b.closest('details'))}).then(()=>recargar('Permisos guardados')).catch(err)}};
 };
 R.cfg=()=>{DR=DR||dr0();DR=dr0();
- $('#main').innerHTML=head()+`<p class="sub" style="margin:0 0 12px;max-width:70ch">Aquí defines todos los importes y reglas que ve el vendedor. Al publicar, cambian en su panel en todos los textos: botones, avisos, ayuda y recibos. A la derecha puedes leer, pantalla por pantalla, el texto que ve cada vendedor.</p><div class="grid2" style="align-items:start"><div id="cfgf"></div></div>`;
- cfgForm();
+ $('#main').innerHTML=head()+`<p class="sub" style="margin:0 0 12px;max-width:70ch">Aquí defines todos los importes y reglas que ve el vendedor. Al publicar, cambian en su panel en todos los textos: botones, avisos, ayuda y recibos. A la derecha puedes leer, pantalla por pantalla, el texto que ve cada vendedor.</p><div class="grid2" style="align-items:start"><div id="cfgf"></div><div id="dpago"></div></div>`;
+ cfgForm();if(puede('accesos'))pintarDatosPago();
 };
+// Datos de pago de Bien Visto: los ven los vendedores para entregar por transferencia. Se guardan como texto.
+async function pintarDatosPago(){const box=$('#dpago');if(!box)return;box.innerHTML='<div class="card"><p class="sub">Cargando datos de pago…</p></div>';
+ let d;try{const r=await fetch('/api/admin/datos-pago');if(!r.ok)throw new Error();d=await r.json()}catch(e){if(box.isConnected)box.innerHTML='<div class="card"><p class="sub">No se pudieron cargar los datos de pago.</p></div>';return}
+ if(!box.isConnected)return;
+ const quien=d.actualizado?`Última actualización: ${esc(d.actualizado_por||'')} · ${esc(fechaMX(d.actualizado))}`:'Aún no están configurados.';
+ box.innerHTML=`<div class="card"><h2 style="font-size:19px">Datos de pago de Bien Visto</h2><p class="sub">Los ven tus vendedores para entregarte por transferencia. Revisa la CLABE contra tu app del banco: son 18 dígitos, con los ceros del inicio.</p>${d.clabe&&!d.clabe_valida?`<div class="banner warn">${INFO}<span>La CLABE guardada no es válida. Corrígela antes de que un vendedor transfiera.</span></div>`:''}
+ <div class="fld"><label class="lbl" for="dpt">Titular</label><input class="f" id="dpt" autocomplete="off" value="${esc(d.titular||'')}" aria-describedby="dpt-e"><div id="dpt-e"></div></div>
+ <div class="fld"><label class="lbl" for="dpc">CLABE</label><input class="f" id="dpc" inputmode="numeric" autocomplete="off" maxlength="22" value="${esc(d.clabe||'')}" aria-describedby="dpc-e"><div id="dpc-e"></div></div>
+ <div class="fld"><label class="lbl" for="dpn">Número de cuenta (opcional)</label><input class="f" id="dpn" inputmode="numeric" autocomplete="off" value="${esc(d.cuenta||'')}" aria-describedby="dpn-e"><div id="dpn-e"></div></div>
+ <p class="sub" style="margin:0 0 10px">Banco: <b>${esc(d.banco||'se toma de la CLABE')}</b> · ${quien}</p>
+ <button class="btn p" id="dpg">Guardar datos de pago</button></div>`;
+ const q=x=>box.querySelector(x);
+ q('#dpg').onclick=async()=>{const b=q('#dpg');b.disabled=true;showErr(box,'dpc','');
+  try{await apiJson('/api/admin/datos-pago','PATCH',{titular:q('#dpt').value,clabe:q('#dpc').value,cuenta:q('#dpn').value});toast('Datos de pago guardados');pintarDatosPago()}
+  catch(e){showErr(box,'dpc',e.message);b.disabled=false}}}
 const PANTALLAS_VEND=['#/hoy','#/saldo','#/ventas','#/displays','#/desempeno','#/cuenta','#/datos-cobro','#/varios','#/bloqueo','#/vender','#/lote/nuevo','#/lote/actual','#/lote/cobro','#/lote/listo'];
 const esperar=ms=>new Promise(r=>setTimeout(r,ms));
 async function auditarTextos(){const b=$('#txtgo'),out=$('#txt-out'),id=$('#txtv').value;
@@ -928,31 +943,29 @@ async function auditarTextos(){const b=$('#txtgo'),out=$('#txt-out'),id=$('#txtv
  finally{fr.remove();b.disabled=false}}
 
 function reciboHtml(s){const c=cln(s.cl),n=s.f.length,su=(get(s.f[0])&&get(s.f[0]).su)||c.n,fl=s.f.join(', ');
- const fp=s.m==='efectivo'?'Efectivo, recibido por '+vn(s.v)+' (vendedor de Bien Visto)':s.m==='transferencia'?'Transferencia a '+vn(s.v)+' (vendedor de Bien Visto) · clave de rastreo '+s.ref:'';
- const iva=(tot(s)*PR.iva/(100+PR.iva)).toFixed(2);
- return `<div class="tabs2" style="margin-bottom:10px"><button id="rt1" aria-pressed="true">WhatsApp ${esc(c.wa)}</button><button id="rt2" aria-pressed="false">Correo</button></div>
- <div id="rw" class="wab"><b>Bien Visto</b><p>Hola ${esc(c.p.split(' ')[0])}, gracias por tu compra en Bien Visto.</p><p><b>Recibo BV-${s.rn}</b><br>• Display Bien Visto (${esc(fl)}) · ${esc(su)}${n>1?'<br>• Cantidad: '+n+' displays':''}${promoS(s)?'<br>• Promoción: '+s.pn+' displays por '+mxn(s.pp):''}<br>• Total: ${mxn(tot(s))} (IVA incluido)<br>• Pago: ${esc(fp)}</p><p>Tu display ya está activo: cada escaneo lleva a dejar una reseña en Google.</p><p>Manual de uso:<br>bienvisto.com.mx/ayuda/manual</p><p>¿Necesitas factura? Pídela aquí:<br>facturar.bienvisto.com.mx/f/BV${s.rn}</p><p>¿Pagaste una cantidad distinta? Respóndenos aquí y lo revisamos.</p></div>
- <div id="rm" class="mailb" hidden><p class="m" style="margin:0;color:var(--muted)">Para: ${esc(c.m)}</p><p style="font-weight:600;margin:2px 0 8px">Tu recibo de Bien Visto · BV-${s.rn}</p><dl class="dl" style="margin:0"><dt>Concepto</dt><dd>Display Bien Visto con NFC y QR (${esc(fl)})</dd><dt>Negocio</dt><dd>${esc(su)}</dd><dt>Total</dt><dd>${mxn(tot(s))}</dd><dt>IVA incluido</dt><dd>$${iva}</dd><dt>Forma de pago</dt><dd>${esc(fp)}</dd></dl><p class="m" style="color:var(--muted);margin:10px 0 0">Este recibo no es una factura. Si la necesitas, pídela en facturar.bienvisto.com.mx/f/BV${s.rn} (RFC, razón social, régimen fiscal y código postal).</p></div>`}
-function wireRecibo(o){const sw=w=>{o.querySelector('#rw').hidden=w!==1;o.querySelector('#rm').hidden=w!==2;o.querySelector('#rt1').setAttribute('aria-pressed',String(w===1));o.querySelector('#rt2').setAttribute('aria-pressed',String(w===2))};o.querySelector('#rt1').onclick=()=>sw(1);o.querySelector('#rt2').onclick=()=>sw(2)}
-function recDlg(id){const s=SALES.find(x=>x.id===id);const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Recibo BV-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div><p class="sub">Así lo recibió ${esc(cln(s.cl).p)}, con el precio de ${mxn(s.p)} fijado al activar. Se envía 5 minutos después de activar, cuando ya no hay correcciones inmediatas.</p>${reciboHtml(s)}`,true);wireRecibo(o)}
+ const fp=s.m==='transferencia'?'Transferencia a '+vn(s.v)+' (vendedor de Bien Visto)'+(s.ref?' · clave de rastreo '+s.ref:''):'Efectivo, recibido por '+vn(s.v)+' (vendedor de Bien Visto)';
+ const L=['Hola '+(c.p.split(' ')[0]||'')+', gracias por tu compra en Bien Visto.','','Recibo VN-'+s.rn,'• Display Bien Visto ('+fl+') · '+su,n>1?'• Cantidad: '+n+' displays':null,'• Total: '+mxn(tot(s))+' (IVA incluido)','• Pago: '+fp,'','Tu display ya está activo: cada escaneo lleva a dejar una reseña en Google.','Manual de uso: bienvisto.com.mx/ayuda/manual','¿Necesitas factura? Pídela aquí: bienvisto.com.mx/factura (usa la referencia VN-'+s.rn+')','','Este recibo no es una factura. Si pagaste una cantidad distinta, responde a este correo y lo revisamos.'].filter(x=>x!==null);
+ return `<div class="mailb"><p class="m" style="margin:0;color:var(--muted)">Para: ${c.m?esc(c.m):'(sin correo)'}</p><p style="font-weight:600;margin:2px 0 8px">Tu recibo de Bien Visto · VN-${s.rn}</p>${L.map(l=>l===''?'<br>':`<p style="margin:0">${esc(l)}</p>`).join('')}</div>`}
+function wireRecibo(){}
+function recDlg(id){const s=SALES.find(x=>x.id===id);const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Recibo VN-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div><p class="sub">${cln(s.cl).m?`Así le llega por correo a ${esc(cln(s.cl).p)}, con el precio de ${mxn(s.p)} fijado al activar. Se envía ${RECIBO_MIN} minutos después de cobrar.`:`${esc(cln(s.cl).p)} no dejó correo: este recibo no se le envía. Es lo que recibiría.`}</p>${reciboHtml(s)}`,true);wireRecibo(o)}
 
 function cobrarDlg(id){const s=SALES.find(x=>x.id===id);
- const o=ov(`<h2>Confirmar cobro · BV-${s.rn}</h2><p class="sub">Confirma que recibiste el pago. Al cobrar, los displays se activan y la reseña de Google queda lista para el cliente.</p>
+ const o=ov(`<h2>Confirmar cobro · VN-${s.rn}</h2><p class="sub">Confirma que recibiste el pago. Al cobrar, los displays se activan y la reseña de Google queda lista para el cliente.</p>
  <div class="fld"><label class="lbl" for="coburl">URL de reseña de Google del negocio</label><input class="f" id="coburl" inputmode="url" autocomplete="off" aria-describedby="coburl-e"><div id="coburl-e"></div></div>
  <div class="row2"><button class="btn p" id="cobok">Cobrar venta</button><button class="btn s" data-x>Cancelar</button></div>`);
  o.querySelector('#cobok').onclick=async()=>{const url=o.querySelector('#coburl').value.trim();
   if(!/^https:\/\/(g\.page\/|([a-z0-9-]+\.)*google\.com\/)/i.test(url)){showErr(o,'coburl','Pega una URL https de Google (g.page o google.com).');o.querySelector('#coburl').focus();return}
-  try{await apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:s.ref||null});log('Cobró la venta BV-'+s.rn);cerrar();await cargarDisplays();toast('Venta BV-'+s.rn+' cobrada. Displays activos')}
+  try{await apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:s.ref||null});log('Cobró la venta VN-'+s.rn);cerrar();await cargarDisplays();toast('Venta VN-'+s.rn+' cobrada. Displays activos')}
   catch(e){toast('No se cobró: '+e.message)}};}
 
 function saleDlg(id){const s=SALES.find(x=>x.id===id),c=cln(s.cl),adm=admin(),n=s.f.length;
- ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Venta BV-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div>${chipS(s)}
+ ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Venta VN-${s.rn}</h2><button class="btn s sm" data-x>Cerrar</button></div>${chipS(s)}
  ${s.sol&&s.est!=='anulada'?`<div class="step"><b>${esc(vn(s.v))} pide anularla.</b> Motivo: ${esc(s.solM)}.</div>`:''}
  <dl class="dl"><dt>Fecha</dt><dd>${fmt(s.fecha)} · ${hace(s.h)}</dd><dt>Displays</dt><dd>${s.f.join(', ')}</dd><dt>Cliente</dt><dd>${esc(c.n)} · ${esc(c.p)}</dd>${adm?`<dt>Vendedor</dt><dd>${esc(vn(s.v))}</dd>`:''}<dt>Cobro</dt><dd>${LAB[s.m]}${s.ref?' · clave '+esc(s.ref):''}</dd><dt>Factura</dt><dd>${facTxt(s)}</dd><dt>Total</dt><dd>${mxn(tot(s))} (IVA ${mxn(Math.round(tot(s)*PR.iva/(100+PR.iva)*100)/100)})${promoS(s)?'</dd><dt>Promoción</dt><dd>'+s.pn+' por '+mxn(s.pp)+' · el cliente ahorró '+mxn(s.f.length*s.p-tot(s)):''}</dd><dt>Comisión del vendedor</dt><dd>${mxn(com(s))}</dd><dt>Entrega a Bien Visto</dt><dd>${mxn(ent(s))} · ${s.est==='entregada'?'recibida':s.est==='anulada'?'anulada':'pendiente'+(s.abono?' (abonó '+mxn(s.abono)+')':'')}</dd>${s.aj?`<dt>Ajuste al vendedor</dt><dd>− ${mxn(s.aj)} en su siguiente corte · ${s.ajA?'ya aplicado':'pendiente'}</dd>`:''}${s.rec?'<dt>Display</dt><dd>Por recuperar con el vendedor</dd>':''}</dl>
  <div class="row2" style="margin-top:8px"><button class="btn s sm" data-rec="${s.id}">Ver recibo del cliente</button>${adm&&s.fac==='si'?`<button class="btn a sm" data-facem="${s.id}">Marcar factura emitida</button>`:''}${adm&&(s.est==='pendp'||s.est==='rev')?`<button class="btn p sm" data-cobrar="${s.id}">Confirmar cobro</button>`:''}${adm&&s.est!=='anulada'?`<button class="btn d sm" data-anular="${s.id}">Anular venta</button>`:''}</div>`,true)}
 
 function anularDlg(id){const s=SALES.find(x=>x.id===id);
- const o=ov(`<h2>Anular venta BV-${s.rn}</h2><p class="sub">Queda registrada con tu nombre y el motivo. El cliente recibe un aviso de anulación.</p>
+ const o=ov(`<h2>Anular venta VN-${s.rn}</h2><p class="sub">Queda registrada con tu nombre y el motivo. El cliente recibe un aviso de anulación.</p>
  <div class="fld"><label class="lbl" for="am">Motivo</label><select class="f" id="am"><option>El cliente se arrepintió</option><option>Error al registrar</option><option>El pago nunca llegó</option></select></div>
  <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0"><input type="checkbox" id="ar"><span>Ya tengo en mano el display ${s.f.join(', ')} (regresó a Bien Visto)</span></label>
  <p class="sub" id="at" style="margin-bottom:0"></p>
@@ -963,12 +976,12 @@ function anularDlg(id){const s=SALES.find(x=>x.id===id);
   const r=o.querySelector('#ar').checked,estaba=s.est;
   if(r){if(estaba==='entregada'){s.aj=ent(s);s.ajA=false}s.est='anulada';s.sol=false;s.rec=false;s.f.forEach(f=>{const d=get(f);d.e='libre';d.cl=null;d.su=null;d.fecha=null;d.esc=0;d.rec=false})}
   else{s.f.forEach(f=>{const d=get(f);d.e='retirado';d.rec=true});s.rec=true;s.sol=false;s.solM=''}
-  log((r?'Anuló':'Marcó por recuperar')+' la venta BV-'+s.rn+' ('+m+')'+(r&&estaba==='entregada'?'. Ajuste de '+mxn(s.aj)+' al vendedor en su siguiente corte':'')+(r?'':'. Display sin regresar'));cerrar();render();toast('Venta BV-'+s.rn+(r?' anulada'+(s.aj?' · ajuste de '+mxn(s.aj)+' al vendedor':''):' marcada: display por recuperar')) }}
+  log((r?'Anuló':'Marcó por recuperar')+' la venta VN-'+s.rn+' ('+m+')'+(r&&estaba==='entregada'?'. Ajuste de '+mxn(s.aj)+' al vendedor en su siguiente corte':'')+(r?'':'. Display sin regresar'));cerrar();render();toast('Venta VN-'+s.rn+(r?' anulada'+(s.aj?' · ajuste de '+mxn(s.aj)+' al vendedor':''):' marcada: display por recuperar')) }}
 
 function corteDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter(s=>s.v===id&&cust(s)).sort((a,b)=>b.h-a.h),fotos=ss.filter(s=>s.foto);
  const o=ov(`<h2>Registrar corte · ${esc(v.n)}</h2><p class="sub">Confirma que ya recibiste el dinero antes de registrar el corte. Se aplica primero a las ventas más antiguas.</p>
- <div class="tw" style="margin-bottom:12px"><table><tbody>${ss.map(s=>`<tr><td>BV-${s.rn}</td><td>${s.f.join(', ')}</td><td class="hide-m">Cobró ${LAB[s.m].toLowerCase()}${s.est==='rev'?' · aviso en revisión':''}</td><td class="num">${mxn(rest(s))}</td></tr>`).join('')}${sd.aj?`<tr><td colspan="3">Ajuste a favor del vendedor (venta anulada tras un corte)</td><td class="num">− ${mxn(Math.min(sd.aj,sd.m))}</td></tr>`:''}<tr><td colspan="3"><b>Total a recibir</b></td><td class="num"><b>${mxn(sd.net)}</b></td></tr></tbody></table></div>
- ${fotos.length?`<div class="card" style="padding:14px;margin-bottom:12px"><span class="lbl">${fotos.length===1?'Foto del comprobante':'Fotos de los comprobantes'} que envió ${esc(v.n.split(' ')[0])}</span><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${fotos.map(f=>`<div style="width:${fotos.length>1?'48%':'100%'}"><iframe src="${f.foto}" title="Comprobante de depósito o transferencia enviado por el vendedor (BV-${f.rn})" style="width:100%;height:340px;border:1px solid var(--borde);border-radius:8px;background:#fff"></iframe><a href="${f.foto}" target="_blank" rel="noopener" class="m">Abrir comprobante BV-${f.rn}</a></div>`).join('')}</div><p class="m" style="color:var(--muted);margin:8px 0 0">Compáralas con el depósito en tu banco antes de confirmar. Se conservan 12 meses y luego se borran solas.</p></div>`:''}
+ <div class="tw" style="margin-bottom:12px"><table><tbody>${ss.map(s=>`<tr><td>VN-${s.rn}</td><td>${s.f.join(', ')}</td><td class="hide-m">Cobró ${LAB[s.m].toLowerCase()}${s.est==='rev'?' · aviso en revisión':''}</td><td class="num">${mxn(rest(s))}</td></tr>`).join('')}${sd.aj?`<tr><td colspan="3">Ajuste a favor del vendedor (venta anulada tras un corte)</td><td class="num">− ${mxn(Math.min(sd.aj,sd.m))}</td></tr>`:''}<tr><td colspan="3"><b>Total a recibir</b></td><td class="num"><b>${mxn(sd.net)}</b></td></tr></tbody></table></div>
+ ${fotos.length?`<div class="card" style="padding:14px;margin-bottom:12px"><span class="lbl">${fotos.length===1?'Foto del comprobante':'Fotos de los comprobantes'} que envió ${esc(v.n.split(' ')[0])}</span><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${fotos.map(f=>`<div style="width:${fotos.length>1?'48%':'100%'}"><iframe src="${f.foto}" title="Comprobante de depósito o transferencia enviado por el vendedor (VN-${f.rn})" style="width:100%;height:340px;border:1px solid var(--borde);border-radius:8px;background:#fff"></iframe><a href="${f.foto}" target="_blank" rel="noopener" class="m">Abrir comprobante VN-${f.rn}</a></div>`).join('')}</div><p class="m" style="color:var(--muted);margin:8px 0 0">Compáralas con el depósito en tu banco antes de confirmar. Se conservan 12 meses y luego se borran solas.</p></div>`:''}
  <div class="fld"><label class="lbl" for="cmo">Monto que recibiste</label><input class="f" id="cmo" inputmode="numeric" value="${sd.net}" aria-describedby="cmo-h cmo-e"><p class="m" id="cmo-h" style="color:var(--muted);margin:4px 0 0">Si recibiste menos, se registra un corte parcial y el resto sigue por entregar.</p><div id="cmo-e"></div></div>
  <div class="fld"><label class="lbl" for="cm">Cómo te lo entregó</label><select class="f" id="cm"><option value="efectivo">Efectivo</option><option value="transferencia"${fotos.length?' selected':''}>Transferencia o depósito</option></select></div>
  <div class="fld" id="crw" ${fotos.length?'':'hidden'}><label class="lbl" for="cr">Clave de rastreo o folio${fotos.length?' (opcional: la foto ya la respalda)':''}</label><input class="f" id="cr" autocapitalize="characters" autocomplete="off" aria-describedby="cr-e"><div id="cr-e"></div></div>
@@ -982,35 +995,35 @@ function corteDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter
   return corteSrv(v,o,+o.querySelector('#cmo').value,tr,val,sd)}}
 
 async function corteSrv(v,o,r,tr,val,sd){
- try{await apiJson('/api/cortes','POST',{vendedor_id:v.id,monto:r,ajuste:0,metodo:tr?'transferencia':'efectivo',referencia:tr?(val||null):null});
-  const queda=Math.max(0,sd.net-r),subio=queda===0&&nivel(v)!=='confianza';
-  if(subio)cambiarVendedorSrv(v.id,{nivel:'confianza'}).catch(e=>toast('No se guardó el nuevo nivel: '+e.message));
+ try{const j=await apiJson('/api/cortes','POST',{vendedor_id:v.id,monto:r,ajuste:0,metodo:tr?'transferencia':'efectivo',referencia:tr?(val||null):null});
+  const queda=Math.max(0,Number(j.saldo_restante)||0),subio=!!j.subio_nivel;
   log('Registró el corte de '+v.n+' por '+mxn(r)+' ('+(tr?'transferencia':'efectivo')+')'+(queda?'. Parcial: quedan '+mxn(queda):'')+(subio?'. Su tope subió a '+mxn(TOPE):''));
   await cargarDisplays();
-  ov(`<h2>${queda?'Corte parcial registrado':'Corte registrado'}</h2><p class="sub">${esc(v.n)} recibió su comprobante por WhatsApp y correo.${queda?' Le quedan '+mxn(queda)+' por entregar.':' Su saldo queda en cero.'}</p>
+  ov(`<h2>${queda?'Corte parcial registrado':'Corte registrado'}</h2><p class="sub">${queda?esc(v.n)+' aún tiene '+mxn(queda)+' por entregar.':'El saldo de '+esc(v.n)+' queda en cero.'} Por cada venta que quedó entregada completa le llega un comprobante por correo.</p>
   <div class="card" style="padding:14px"><span class="lbl">Comprobante de entrega</span><dl class="dl" style="margin:0"><dt>Recibido</dt><dd>${mxn(r)}</dd>${queda?`<dt>Por entregar</dt><dd>${mxn(queda)}</dd>`:''}</dl><p class="m" style="color:var(--muted);margin:8px 0 0">Comprobante interno. No es una factura.</p></div>
-  ${subio?`<div class="step">El tope de ${esc(v.n.split(' ')[0])} sube a <b>${mxn(TOPE)}</b> por su primer corte completo.</div>`:''}
+  ${subio?`<div class="step">${esc(v.n.split(' ')[0])} pasa a vendedor de confianza: su tope sube a <b>${mxn(TOPE)}</b>.</div>`:''}
   <div class="row2"><button class="btn p" data-x>Listo</button></div>`)}catch(e){toast('No se registró el corte: '+e.message)}}
 
 async function anularSrv(s,o){
  if(!o.querySelector('#ar').checked){
   if(s.srv!=='cobrada'){toast('Sin el display en mano solo se puede marcar por recuperar una venta cobrada.');return}
-  try{for(const f of s.f)await apiJson('/api/displays/'+encodeURIComponent(f),'PATCH',{estado:'retirado'});
-   log('Marcó por recuperar los displays de la venta BV-'+s.rn);cerrar();await cargarDisplays();toast('Displays de BV-'+s.rn+' marcados por recuperar')}
+  try{await apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'recuperar'});
+   log('Marcó por recuperar los displays de la venta VN-'+s.rn);cerrar();await cargarDisplays();toast('Displays de VN-'+s.rn+' marcados por recuperar')}
   catch(e){toast('No se marcó: '+e.message)}
   return}
  if(s.est==='entregada'){toast('Una venta ya entregada no se puede anular todavía.');return}
  try{if(s.solId)await apiJson('/api/solicitudes/'+encodeURIComponent(s.solId),'PATCH',{accion:'aprobar'});
   else await apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'anular'});
-  log('Anuló la venta BV-'+s.rn);cerrar();await cargarDisplays();toast('Venta BV-'+s.rn+' anulada')}
+  log('Anuló la venta VN-'+s.rn);cerrar();await cargarDisplays();toast('Venta VN-'+s.rn+' anulada')}
  catch(e){toast('No se anuló: '+e.message)}}
 
 async function impagoSrv(v,ss,m,o){try{for(const x of ss)await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'impago',valor:1});log('Registró adeudo por impago de '+v.n+' ('+mxn(m)+')');cerrar();await cargarDisplays();toast('Adeudo de '+mxn(m)+' registrado')}catch(e){toast('No se registró el adeudo: '+e.message)}}
 
-async function adeudoSrv(v,ss,o,pago,url){
- if(pago&&!url&&ss.some(x=>x.srv==='pendiente'||x.srv==='rev')){showErr(o,'adurl','Pega la URL de reseña de Google del negocio.');o.querySelector('#adurl').focus();return}
+async function adeudoSrv(v,ss,o,pago){
+ const urls={};
+ if(pago){for(const inp of o.querySelectorAll('[data-adurl]')){const u=inp.value.trim(),k=inp.id;showErr(o,k,'');if(!/^https:\/\/(g\.page\/|([a-z0-9-]+\.)*google\.com\/)/i.test(u)){showErr(o,k,'Pega la URL de reseña de Google de este negocio.');inp.focus();return}urls[inp.dataset.adurl]=u}}
  try{for(const x of ss){
-   if(pago&&(x.srv==='pendiente'||x.srv==='rev'))await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'cobrar',url_resena:url,referencia:x.ref||null});
+   if(pago&&(x.srv==='pendiente'||x.srv==='rev'))await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'cobrar',url_resena:urls[x.id],referencia:x.ref||null});
    else if(pago)await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'impago',valor:0});
    else await apiJson('/api/ventas/'+encodeURIComponent(x.id),'PATCH',{accion:'anular'});}
   log('Resolvió el adeudo de '+v.n+' ('+mxn(ss.reduce((a,x)=>a+rest(x),0))+'): '+(pago?'pagó':'devolvió los displays'));cerrar();await cargarDisplays();
@@ -1025,14 +1038,14 @@ function impDlg(id){const v=V.find(x=>x.id===id),ss=SALES.filter(s=>s.v===id&&cu
  o.querySelector('#iok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return impagoSrv(v,ss,m,o);ds.forEach(f=>{const d=get(f);d.e='retirado';d.rec=true});ss.forEach(s=>{s.imp=true;s.rec=true});log('Retiró '+(ds.length||'0')+' displays de '+v.n+' por impago. Adeudo de '+mxn(m));cerrar();render();toast('Adeudo de '+mxn(m)+' registrado · '+ds.length+' displays retirados')}}
 
 function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filter(s=>s.v===id&&s.imp&&(s.est==='pendp'||s.est==='cobrada'||s.est==='rev'));
- const o=ov(`<h2>Resolver adeudo · ${esc(v.n)}</h2><p class="sub">Tiene un adeudo de ${mxn(sd.deuda)} por ${ss.map(s=>'BV-'+s.rn).join(', ')}.</p>
+ const o=ov(`<h2>Resolver adeudo · ${esc(v.n)}</h2><p class="sub">Tiene un adeudo de ${mxn(sd.deuda)} por ${ss.map(s=>'VN-'+s.rn).join(', ')}.</p>
  <div class="fld"><label class="lbl" for="ad">¿Cómo lo resolvió?</label><select class="f" id="ad"><option value="pago">Pagó el adeudo (${mxn(sd.deuda)})</option><option value="dev">Devolvió los displays</option></select></div>
- <div class="fld" id="adu" hidden><label class="lbl" for="adurl">URL de reseña de Google del negocio</label><input class="f" id="adurl" inputmode="url" autocomplete="off" aria-describedby="adurl-e"><div id="adurl-e"></div></div>
+ <div id="adu" hidden>${ss.filter(x=>x.srv==='pendiente'||x.srv==='rev').map((x,i)=>`<div class="fld"><label class="lbl" for="adurl${i}">URL de reseña de Google · ${esc(cln(x.cl).n)} (VN-${x.rn})</label><input class="f" id="adurl${i}" data-adurl="${esc(x.id)}" inputmode="url" autocomplete="off" aria-describedby="adurl${i}-e"><div id="adurl${i}-e"></div></div>`).join('')}</div>
  <p class="sub" id="adt" style="margin-bottom:0"></p>
  <div class="row2"><button class="btn p" id="aok">Confirmar</button><button class="btn s" data-x>Cancelar</button></div>`);
  const t=()=>{o.querySelector('#adu').hidden=o.querySelector('#ad').value!=='pago'||!ss.some(x=>x.srv==='pendiente'||x.srv==='rev');o.querySelector('#adt').textContent=o.querySelector('#ad').value==='pago'?'Confirma que ya recibiste el dinero. Las ventas quedan liquidadas, los displays siguen retirados hasta que los reactives y su panel se desbloquea.':'Las ventas se anulan, los displays vuelven a libre y el vendedor devuelve el dinero a sus clientes. Su panel se desbloquea.'};
  o.querySelector('#ad').onchange=t;t();
- o.querySelector('#aok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return adeudoSrv(v,ss,o,o.querySelector('#ad').value==='pago',o.querySelector('#adurl').value.trim());const pago=o.querySelector('#ad').value==='pago';
+ o.querySelector('#aok').onclick=()=>{if(ss.some(x=>x.ventaSrv))return adeudoSrv(v,ss,o,o.querySelector('#ad').value==='pago');const pago=o.querySelector('#ad').value==='pago';
   ss.forEach(s=>{s.imp=false;s.rec=false;if(pago){s.est='entregada';s.fc='2026-10-06';s.abono=0}else{s.est='anulada';s.f.forEach(f=>{const d=get(f);d.e='libre';d.cl=null;d.su=null;d.fecha=null;d.esc=0;d.rec=false})}});
   log('Resolvió el adeudo de '+v.n+' ('+mxn(sd.deuda)+'): '+(pago?'pagó':'devolvió los displays'));cerrar();render();toast('Adeudo resuelto. El panel de '+v.n.split(' ')[0]+' se desbloquea')}}
 
@@ -1058,7 +1071,7 @@ function avisoDlg(id){const a=AVISOS.find(x=>x.id===id);if(!a)return toast('Ese 
   finally{c.disabled=false}
  };
  o.querySelector('#avok').onclick=async()=>{const b=o.querySelector('#avok');b.disabled=true;
-  try{const j=await apiJson('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/confirmar','POST',{});log('Confirmó el aviso de '+a.vendedor+' por '+mxn(a.monto));toast('Entrega de '+a.vendedor+' confirmada');cerrar();await recargar()}
+  try{const j=await apiJson('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/confirmar','POST',{});log('Confirmó el aviso de '+a.vendedor+' por '+mxn(a.monto));toast('Entrega de '+a.vendedor+' confirmada'+(j.subio_nivel?'. Pasa a vendedor de confianza; su tope sube a '+mxn(TOPE):''));cerrar();await recargar()}
   catch(e){toast('No se pudo confirmar: '+e.message);b.disabled=false}};
  o.querySelector('#avno').onclick=()=>{o.querySelector('#avrb').hidden=false;o.querySelector('#avrt').focus()};
  o.querySelector('#avrx').onclick=()=>{o.querySelector('#avrb').hidden=true};
@@ -1110,7 +1123,7 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-gocob]')){S.vista='vta';S.vsub='saldos';render();return}
  if(el=t.closest('[data-corte]')){corteDlg(el.dataset.corte);return}
  if(el=t.closest('[data-impago]')){impDlg(el.dataset.impago);return}
- if(el=t.closest('[data-facem]')){const s=SALES.find(x=>x.id===el.dataset.facem);if(s.ventaSrv){apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'factura',factura:'emitida'}).then(()=>cargarDisplays()).catch(e=>toast('No se guardó: '+e.message));return}s.fac='emitida';log('Marcó como emitida la factura de BV-'+s.rn);cerrar();render();toast('Factura de BV-'+s.rn+' marcada como emitida');return}
+ if(el=t.closest('[data-facem]')){const s=SALES.find(x=>x.id===el.dataset.facem);if(s.ventaSrv){apiJson('/api/ventas/'+encodeURIComponent(s.id),'PATCH',{accion:'factura',factura:'emitida'}).then(()=>cargarDisplays()).catch(e=>toast('No se guardó: '+e.message));return}s.fac='emitida';log('Marcó como emitida la factura de VN-'+s.rn);cerrar();render();toast('Factura de VN-'+s.rn+' marcada como emitida');return}
  if(el=t.closest('[data-gofac]')){S.vista='vta';S.vsub='ventas';S.fs='fac';render();return}
  if(el=t.closest('[data-adeudo]')){adeudoDlg(el.dataset.adeudo);return}
  if(el=t.closest('[data-bpag]')){bpagDlg(+el.dataset.bpag);return}
