@@ -1072,6 +1072,10 @@ function ordKey(t){return S.vista+'|'+tablasOrdenables().indexOf(t)}
 function colNumerica(t,c){const n=t.tHead.rows[0].cells.length,vals=[...t.tBodies[0].rows].filter(r=>r.cells.length===n).map(r=>textoCelda(r,c)).filter(v=>v!==''&&v!=='·');
   return vals.length>0&&vals.every(v=>numCelda(v)!==null&&v.replace(/\D/g,'').length<10)}
 const vacio=s=>s===''||s==='·';
+// Fechas como "9 oct" o "9 oct 2026" (sin año = año en curso).
+const fechaCelda=s=>{const m=/^(\d{1,2}) ([a-z]{3})(?: (\d{4}))?/i.exec(String(s).trim());if(!m)return null;const i=MES.indexOf(m[2].toLowerCase());if(i<0)return null;return Date.UTC(m[3]?+m[3]:new Date().getFullYear(),i,+m[1])};
+function colFecha(t,c){const n=t.tHead.rows[0].cells.length,vals=[...t.tBodies[0].rows].filter(r=>r.cells.length===n).map(r=>textoCelda(r,c)).filter(v=>!vacio(v));
+  return vals.length>0&&vals.every(v=>fechaCelda(v)!==null)}
 function aplicarOrdenes(){
   tablasOrdenables().forEach(t=>{
     const tb=t.tBodies[0],filas=[...tb.rows],k=ordKey(t),ord0=ORDEN[k],col=ord0?ord0.c:undefined,sent=ord0&&ord0.dir==='desc'?-1:1;
@@ -1086,6 +1090,7 @@ function aplicarOrdenes(){
     if(col===undefined||filas.length<2||filas.some(r=>r.cells.length!==ths.length)){ord=filas.slice().sort((a,b)=>a.dataset.oi-b.dataset.oi)}
     else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col);
       if(vacio(x)||vacio(y))return vacio(x)-vacio(y);// los vacíos siempre al final
+      const dx=fechaCelda(x),dy=fechaCelda(y);if(dx!==null&&dy!==null)return sent*(dx-dy);
       const nx=numCelda(x),ny=numCelda(y);
       if(nx!==null&&ny!==null)return sent*(nx-ny);return sent*x.localeCompare(y,'es',{numeric:true,sensitivity:'base'})})}
     if(ord.some((r,i)=>r!==filas[i])) ord.forEach(r=>tb.appendChild(r));
@@ -1157,7 +1162,7 @@ document.addEventListener('click',e=>{
   const th=e.target.closest('th');if(!th||!th.parentElement||!th.closest('thead'))return;
   const t=th.closest('table');if(!t||!tablasOrdenables().includes(t)||!th.textContent.trim())return;
   const k=ordKey(t),c=th.cellIndex;
-  if(ORDEN[k]&&ORDEN[k].c===c)delete ORDEN[k];else ORDEN[k]={c,dir:colNumerica(t,c)?'desc':'asc'};
+  if(ORDEN[k]&&ORDEN[k].c===c)delete ORDEN[k];else ORDEN[k]={c,dir:colNumerica(t,c)||colFecha(t,c)?'desc':'asc'};
   PAG[k]=0;
   aplicarOrdenes();
 });
