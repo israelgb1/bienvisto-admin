@@ -282,7 +282,7 @@ const fmtAnio=d=>{const x=new Date(d+'T12:00:00');return x.getDate()+' '+MES[x.g
 const dias=d=>Math.round((HOY-new Date(d+'T12:00:00'))/864e5);
 const ERR='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6M12 16.5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const INFO='<svg viewBox="0 0 24 24" fill="none" stroke="#0E6B5C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5M12 7.5v.5"/></svg>';
-const IC={per:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',reg:'<path d="M12 5v14M5 12h14"/>',cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
+const IC={seg:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',per:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',reg:'<path d="M12 5v14M5 12h14"/>',cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
 
 /* datos inventados */
 let V=[{id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'}];
@@ -353,18 +353,18 @@ document.addEventListener('keydown',e=>{const o=$('#ov');if(!o)return;
   if(!o.contains(document.activeElement)){e.preventDefault();a.focus()}else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}}});
 
 /* navegación */
-function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(puede('accesos'))items.push(['per','Permisos']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
+function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(admin())items.splice(items.findIndex(x=>x[0]==='vta')+1,0,['seg','Resúmenes']);if(puede('accesos'))items.push(['per','Permisos']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
   for(let i=items.length-1;i>=0;i--)if(!tabOk(items[i][0]))items.splice(i,1);
- const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial',per:'Permisos'};
+ const map={seg:'Resúmenes',reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial',per:'Permisos'};
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
- const GR={res:'Operación',vta:'Dinero',cfg:'Sistema'};
+ const GR={res:'Operación',vta:'Dinero',seg:'Postventa',cfg:'Sistema'};
  $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('')+'<a class="nav-salir" href="/cdn-cgi/access/logout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Salir</a>';
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor';if(PERM&&PERM.correo)$('#quien').textContent=PERM.correo}
-const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
+const TIT={seg:'Resúmenes quincenales',reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}</div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
-function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
+function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'||S.vista==='seg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
 let PERM=null;const puede=p=>!!(PERM&&Array.isArray(PERM.permisos)&&PERM.permisos.includes(p));
-const PERM_TAB={res:'ver_resumen',dis:'ver_inventario',cli:'ver_inventario',inv:'ver_inventario',reg:'inventario_registrar',ven:'ver_vendedores',vta:'ver_cobros',cfg:['precios_venta','costos_impuestos','reglas_vendedores'],his:'ver_historial',per:'accesos'};
+const PERM_TAB={seg:'ver_cobros',res:'ver_resumen',dis:'ver_inventario',cli:'ver_inventario',inv:'ver_inventario',reg:'inventario_registrar',ven:'ver_vendedores',vta:'ver_cobros',cfg:['precios_venta','costos_impuestos','reglas_vendedores'],his:'ver_historial',per:'accesos'};
 const tabOk=k=>{const q=PERM_TAB[k];if(!q||!PERM)return true;return Array.isArray(q)?q.some(puede):puede(q)};
 function aplicarPermisosUI(){if(!PERM)return;const off=e=>{if(e)e.disabled=true};
  if(!puede('costos_impuestos'))['#pc','#pi','#piv'].forEach(q=>off($(q)));
@@ -1338,6 +1338,175 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='
 let ordenesBusy=false;
 new MutationObserver(()=>{if(ordenesBusy)return;ordenesBusy=true;try{aplicarOrdenes()}finally{ordenesBusy=false}}).observe($('#main'),{childList:true,subtree:true});
 cargarPerfil().then(async()=>{try{await cargarDisplays()}catch(e){toast('No se pudo cargar el inventario del servidor.')}render()},e=>{$('#main').innerHTML=e.acceso?'<div class="card"><h2 style="font-size:19px">Sin acceso</h2><p class="sub">Tu correo no tiene acceso a este panel. Pide a Isra que te lo dé.</p></div>':'<div class="card"><h2 style="font-size:19px">No se pudo verificar tu acceso</h2><p class="sub">Recarga la página en un momento.</p></div>'});
+/* Generador del PNG del resumen quincenal. Dibuja en canvas con la fuente de marca ya cargada en la página. */
+const BV_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 39.7 785.42 124.3" role="img" aria-labelledby="t"><title id="t">Bien Visto imagotipo-horizontal reverso</title><g transform="translate(-4.61 13.53) scale(0.62)"><path fill="#FBF6EC" d="M62 163 L62 78 A16 16 0 0 0 30 78 L30 163 A16 16 0 0 0 62 163 Z"/><path fill="#FBF6EC" fill-rule="evenodd" d="M30 163 A59 59 0 1 1 148 163 A59 59 0 1 1 30 163 Z M62 163 A27 27 0 1 0 116 163 A27 27 0 1 0 62 163 Z"/><path fill="#F2A71B" d="M159.53 150 L197.35 215.5 A15 15 0 0 0 223.33 215.5 L298.96 84.5 A15 15 0 0 0 272.98 69.5 L210.34 178 L185.51 135 A15 15 0 0 0 159.53 150 Z"/></g><g transform="translate(222.09 150) scale(0.6)"><path fill="#FBF6EC" transform="translate(0 0)" d="M0 -59V-148.68C0 -155.86 5.82 -161.68 13 -161.68C20.18 -161.68 26 -155.86 26 -148.68V-108.97C35.91 -115.92 47.98 -120 61 -120C94.69 -120 122 -92.69 122 -59C122 -25.31 94.69 2 61 2C27.31 2 0 -25.31 0 -59ZM26.78 -59C26.78 -40.1 42.1 -24.78 61 -24.78C79.9 -24.78 95.22 -40.1 95.22 -59C95.22 -77.9 79.9 -93.22 61 -93.22C42.1 -93.22 26.78 -77.9 26.78 -59Z"/><path fill="#FBF6EC" transform="translate(137.84 0)" d="M26 -11.8C26 -4.62 20.18 1.2 13 1.2C5.82 1.2 0 -4.62 0 -11.8V-106.2C0 -113.38 5.82 -119.2 13 -119.2C20.18 -119.2 26 -113.38 26 -106.2ZM-2.08 -146.5C-2.08 -154.83 4.67 -161.58 13 -161.58C21.33 -161.58 28.08 -154.83 28.08 -146.5C28.08 -138.17 21.33 -131.42 13 -131.42C4.67 -131.42 -2.08 -138.17 -2.08 -146.5Z"/><path fill="#FBF6EC" transform="translate(179.69 0)" d="M121.11 -69.39C122.39 -61.99 122.29 -54.41 120.82 -47.04H28.94C30.71 -42.28 33.57 -37.86 37.44 -34.18C48.76 -23.44 65.9 -21.72 79.13 -29.98C85.4 -33.9 93.66 -32 97.58 -25.73C101.51 -19.45 99.6 -11.19 93.33 -7.27C69.75 7.47 39.19 4.39 19.01 -14.75C-1.16 -33.89 -5.83 -64.25 7.65 -88.57C21.13 -112.89 49.35 -125.02 76.27 -118.06C99.78 -111.98 117.1 -92.69 121.11 -69.39ZM93.07 -70.96C89.24 -81.2 80.63 -89.27 69.57 -92.13C54.47 -96.04 38.64 -89.24 31.07 -75.6C30.24 -74.09 29.52 -72.54 28.93 -70.96H93.07Z"/><path fill="#FBF6EC" transform="translate(312.49 0)" d="M26 -11.8C26 -4.62 20.18 1.2 13 1.2C5.82 1.2 0 -4.62 0 -11.8V-106.2C0 -113.38 5.82 -119.2 13 -119.2C17.76 -119.2 21.92 -116.64 24.19 -112.83C31.72 -117.38 40.55 -120 50 -120C77.61 -120 100 -97.61 100 -70V-11.8C100 -4.62 94.18 1.2 87 1.2C79.82 1.2 74 -4.62 74 -11.8V-70C74 -83.25 63.25 -94 50 -94C36.75 -94 26 -83.25 26 -70Z"/><path fill="#FBF6EC" transform="translate(456.15 0)" d="M1.45 -101.05 52.49 -5.05C54.63 -1.02 58.83 1.5 63.4 1.5C67.96 1.5 72.16 -1.02 74.3 -5.05L125.34 -101.05C128.54 -107.07 126.26 -114.55 120.24 -117.75C114.21 -120.96 106.73 -118.67 103.53 -112.65L63.39 -37.16L23.25 -112.65C19.97 -118.51 12.6 -120.67 6.68 -117.51C0.75 -114.36 -1.57 -107.05 1.45 -101.05Z"/><path fill="#FBF6EC" transform="translate(593.63 0)" d="M26 -11.8C26 -4.62 20.18 1.2 13 1.2C5.82 1.2 0 -4.62 0 -11.8V-106.2C0 -113.38 5.82 -119.2 13 -119.2C20.18 -119.2 26 -113.38 26 -106.2ZM-2.08 -146.5C-2.08 -154.83 4.67 -161.58 13 -161.58C21.33 -161.58 28.08 -154.83 28.08 -146.5C28.08 -138.17 21.33 -131.42 13 -131.42C4.67 -131.42 -2.08 -138.17 -2.08 -146.5Z"/><path fill="#FBF6EC" transform="translate(633.81 0)" d="M67.33 -104.48C71.15 -98.82 69.66 -91.15 64 -87.33C58.34 -83.51 50.67 -85 46.85 -90.66C44.05 -94.82 38.7 -96.43 34.07 -94.5C29.44 -92.57 26.82 -87.64 27.81 -82.72C28.79 -77.81 33.11 -74.27 38.12 -74.27L38.13 -74.27C56.63 -74.27 72.47 -60.98 75.68 -42.76C78.89 -24.54 68.56 -6.64 51.17 -0.31C33.79 6.02 14.36 -1.05 5.11 -17.07C1.76 -22.97 3.8 -30.47 9.68 -33.86C15.55 -37.25 23.06 -35.27 26.5 -29.42C29.76 -23.78 36.6 -21.29 42.72 -23.52C48.85 -25.75 52.49 -32.06 51.35 -38.47C50.22 -44.89 44.65 -49.57 38.13 -49.57C21.35 -49.57 6.89 -61.41 3.59 -77.87C0.3 -94.33 9.07 -110.82 24.56 -117.29C40.05 -123.76 57.95 -118.4 67.33 -104.48Z"/><path fill="#FBF6EC" transform="translate(721.98 0)" d="M2 -95.28C-4.61 -95.28 -9.96 -100.63 -9.96 -107.24C-9.96 -113.85 -4.61 -119.2 2 -119.2H16.22C17.35 -125.23 22.64 -129.8 29 -129.8C35.36 -129.8 40.65 -125.23 41.78 -119.2H63C69.61 -119.2 74.96 -113.85 74.96 -107.24C74.96 -100.63 69.61 -95.28 63 -95.28H42V-43.8C42 -33.31 50.51 -24.8 61 -24.8C68.18 -24.8 74 -18.98 74 -11.8C74 -4.62 68.18 1.2 61 1.2C36.15 1.2 16 -18.95 16 -43.8V-95.28Z"/><path fill="#FBF6EC" transform="translate(793.55 0)" d="M0 -59C0 -92.69 27.31 -120 61 -120C94.69 -120 122 -92.69 122 -59C122 -25.31 94.69 2 61 2C27.31 2 0 -25.31 0 -59ZM26.78 -59C26.78 -40.1 42.1 -24.78 61 -24.78C79.9 -24.78 95.22 -40.1 95.22 -59C95.22 -77.9 79.9 -93.22 61 -93.22C42.1 -93.22 26.78 -77.9 26.78 -59Z"/></g></svg>`;
+const BV = { v: '#0E6B5C', a: '#F2A71B', t: '#12302B', c: '#FBF6EC', m: '#E7F0EC', g: '#5C7069', l: '#DDE7E2', claro: '#9CC3B9' };
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const INICIALES = ['D','L','M','X','J','V','S'];
+
+function fechaLarga(iso) { const [y, m, d] = iso.split('-').map(Number); return d + ' de ' + MESES[m - 1]; }
+function cargarImagen(src) { return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; }); }
+
+function textoResumen(d) {
+  const c = d.cifras, n = d.numero, tot = c.total;
+  const items = [];
+  // 1. Lo que se ve en la quincena
+  if (d.nivel === 'bajo') items.push(['Esta quincena hubo pocos escaneos', 'Pasa al inicio y se mejora con ajustes sencillos.']);
+  else if (d.nivel === 'alto') items.push(['Gran quincena: ' + tot + ' escaneos', 'Cada escaneo es una oportunidad de reseña. Mantén el ritmo.']);
+  else if (c.pct_finde >= 50) items.push(['Fin de semana: ' + c.pct_finde + '% de tus escaneos', 'Entre semana hay reseñas por ganar.']);
+  else items.push(['Entre semana: ' + (100 - c.pct_finde) + '% de tus escaneos', 'El fin de semana hay reseñas por ganar.']);
+  // 2. Comparación
+  if (d.promedio_red != null) {
+    const arriba = tot >= d.promedio_red;
+    items.push([arriba ? 'Vas arriba del promedio' : 'Vas por debajo del promedio', 'Los negocios con display Bien Visto promedian ' + d.promedio_red + ' escaneos por quincena.']);
+  } else if (d.anterior == null) items.push(['Este es tu punto de partida', 'Desde aquí medimos cuánto crece tu display quincena a quincena.']);
+  else if (tot > d.anterior) items.push(['Subiste ' + (tot - d.anterior) + ' escaneos', 'La quincena anterior fueron ' + d.anterior + '. Sigue así.']);
+  else items.push(['Quincena anterior: ' + d.anterior + ' escaneos', 'Esta quincena: ' + tot + '. La constancia importa más que un pico.']);
+  // 3. Qué hacer
+  if (n === 6) items.push(['Cerraste tus 90 días de seguimiento', 'Sumaron ' + d.acumulado + ' escaneos. El siguiente paso es convertirlos en más reseñas.']);
+  else items.push(['Haz esto esta quincena', d.rec ? d.rec.texto : 'Pide la reseña al cobrar y señala el display.']);
+  return items;
+}
+
+async function dibujarResumen(d, opciones) {
+  opciones = opciones || {};
+  const W = 1080, H0 = 2000, F = '"Bricolage Grotesque", system-ui, sans-serif';
+  await Promise.all(['400 20px', '600 20px', '800 20px'].map((f) => document.fonts.load(f + ' "Bricolage Grotesque"')));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H0;
+  const x = cv.getContext('2d');
+  const font = (w, s) => { x.font = w + ' ' + s + 'px ' + F; };
+  const rr = (px, py, w, h, r) => { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); };
+  const txt = (s, px, py, color, w, size, align) => { font(w, size); x.fillStyle = color; x.textAlign = align || 'left'; x.textBaseline = 'alphabetic'; x.fillText(s, px, py); };
+  const wrap = (s, maxW) => { const out = []; let line = ''; for (const p of s.split(' ')) { const t = line ? line + ' ' + p : p; if (x.measureText(t).width > maxW && line) { out.push(line); line = p; } else line = t; } if (line) out.push(line); return out; };
+
+  x.fillStyle = BV.c; x.fillRect(0, 0, W, H0);
+  // Encabezado
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, 230); x.fillStyle = BV.v; x.fillRect(0, 230, W, 6);
+  rr(56, 54, 245, 54, 27); x.fillStyle = BV.v; x.fill();
+  const logo = await cargarImagen('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(BV_LOGO_SVG));
+  x.drawImage(logo, 70, 62, 218, 218 * 124.3 / 785.42 * 1.0 + 0);
+  const per = 'Del ' + fechaLarga(d.periodo.desde) + ' al ' + fechaLarga(d.periodo.hasta);
+  txt(per, 1024, 90, BV.g, 400, 25, 'right');
+  txt((d.folios.length > 1 ? 'Folios ' : 'Folio ') + d.folios.join(', '), 1024, 124, BV.g, 400, 22, 'right');
+  font(800, 56); let nombre = d.negocio || 'Tu negocio'; while (x.measureText(nombre).width > 968 && nombre.length > 4) nombre = nombre.slice(0, -2);
+  if (nombre !== (d.negocio || 'Tu negocio')) nombre += '…';
+  txt(nombre, 56, 175, BV.v, 800, 56);
+  txt(d.numero === 6 ? 'Así te fue en tus 90 días con el display' : 'Así se usó tu display esta quincena', 56, 214, BV.g, 400, 26);
+
+  let y = 258;
+  // Tarjetas
+  const c = d.cifras, tw = [376, 278, 278], gx = [56, 56 + 376 + 18, 56 + 376 + 18 + 278 + 18];
+  const tile = (i, big, num, numSize, label, pill) => {
+    const w = tw[i], h = 200; rr(gx[i], y, w, h, 24); x.fillStyle = big ? BV.v : '#fff'; x.fill(); if (!big) { x.lineWidth = 2; x.strokeStyle = BV.l; x.stroke(); }
+    txt(num, gx[i] + 24, y + (numSize === 58 ? 70 : 64), big ? '#fff' : BV.t, 800, numSize);
+    font(400, 23); const ls = wrap(label, w - 48); ls.slice(0, 2).forEach((l, k) => txt(l, gx[i] + 24, y + 104 + k * 27, big ? '#CFE5DF' : BV.g, 400, 23));
+    if (pill) { font(600, 23); const pw = x.measureText(pill).width + 28; rr(gx[i] + 24, y + 150, pw, 34, 17); x.fillStyle = big ? '#fff' : BV.m; x.fill(); txt(pill, gx[i] + 38, y + 175, BV.v, 600, 23); }
+  };
+  const diasConEsc = c.por_dia.filter((p) => p.n > 0).length;
+  const prevPill = d.anterior == null ? null : (c.total >= d.anterior ? '▲ ' + (c.total - d.anterior) + ' más que antes' : '▼ ' + (d.anterior - c.total) + ' menos que antes');
+  if (d.numero === 6) {
+    tile(0, true, String(d.acumulado), 58, 'escaneos en tus 90 días', null);
+    tile(1, false, String(c.total), 44, 'escaneos en la última quincena', null);
+  } else tile(0, true, String(c.total), 58, c.total === 1 ? 'persona escaneó tu display' : 'personas escanearon tu display', prevPill);
+  if (d.nivel === 'bajo' && d.numero !== 6) {
+    tile(1, false, diasConEsc + ' de 15', 44, 'días con al menos un escaneo', null);
+    if (d.promedio_red != null) tile(2, false, String(d.promedio_red), 44, 'escaneos promedio en negocios Bien Visto', null);
+    else tile(2, false, String(d.acumulado), 44, 'escaneos desde que lo activaste', null);
+  } else {
+    if (d.numero !== 6) tile(1, false, c.mejor_dia ? c.mejor_dia.nombre[0].toUpperCase() + c.mejor_dia.nombre.slice(1) : '-', 44, 'tu mejor día', c.mejor_dia ? c.mejor_dia.n + ' escaneos' : null);
+    tile(2, false, c.mejor_franja ? c.mejor_franja.desde.replace(' am', '').replace(' pm', '') + ' a ' + c.mejor_franja.hasta : '-', 40, 'tu mejor hora', c.mejor_franja ? c.mejor_franja.pct + '% del total' : null);
+  }
+  y += 200 + 36;
+  // Gráfica
+  const bajo = d.nivel === 'bajo' && d.numero !== 6;
+  txt(bajo ? 'Tus 15 días' : d.numero === 6 ? 'Tu última quincena, día por día' : 'Tus 15 días, día por día', 56, y + 6, BV.t, 600, 32); y += 34;
+  txt(bajo ? 'Cada escaneo es una oportunidad de reseña. Los días en blanco también cuentan.' : 'Escaneos por día. Cada uno es una oportunidad de reseña.', 56, y + 8, BV.g, 400, 22); y += 28;
+  const maxN = Math.max(1, ...c.por_dia.map((p) => p.n));
+  const chartH = bajo ? 168 : 290; rr(56, y, 968, chartH, 26); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 2; x.strokeStyle = BV.l; x.stroke();
+  const slot = 924 / 15, mejorIdx = c.por_dia.findIndex((p) => p.n === maxN && maxN > 0);
+  c.por_dia.forEach((p, i) => {
+    const dow = new Date(p.dia + 'T12:00:00Z').getUTCDay(), cx = 56 + 22 + slot * i + slot / 2, dnum = Number(p.dia.slice(8));
+    if (bajo) {
+      const bw = slot - 8, bx = cx - bw / 2, by = y + 18; rr(bx, by, bw, 92, 16); x.fillStyle = p.n > 0 ? BV.v : '#fff'; x.fill();
+      if (p.n === 0) { x.lineWidth = 2; x.strokeStyle = '#C9D8D2'; x.stroke(); }
+      txt(String(dnum), cx, by + 52, p.n > 0 ? '#fff' : '#9AAFA8', 800, 26, 'center'); txt(INICIALES[dow], cx, by + 78, p.n > 0 ? '#fff' : '#9AAFA8', 400, 17, 'center');
+    } else {
+      const base = y + 196, bh = Math.max(p.n ? 8 : 0, Math.round((p.n / maxN) * 130));
+      const color = i === mejorIdx ? BV.a : (dow === 0 || dow === 6) ? BV.v : BV.claro;
+      if (bh) { x.beginPath(); x.moveTo(cx - 20, base); x.lineTo(cx - 20, base - bh + 9); x.arcTo(cx - 20, base - bh, cx - 11, base - bh, 9); x.lineTo(cx + 11, base - bh); x.arcTo(cx + 20, base - bh, cx + 20, base - bh + 9, 9); x.lineTo(cx + 20, base); x.closePath(); x.fillStyle = color; x.fill(); }
+      txt(String(p.n), cx, base - bh - 7, BV.t, 600, 20, 'center'); txt(String(dnum), cx, base + 26, BV.t, 600, 20, 'center'); txt(INICIALES[dow], cx, base + 46, BV.g, 400, 17, 'center');
+    }
+  });
+  // Leyenda
+  const leyenda = bajo ? [[BV.v, 'Día con escaneos'], ['#fff', 'Sin escaneos']] : [[BV.a, 'Tu mejor día'], [BV.v, 'Fin de semana'], [BV.claro, 'Entre semana']];
+  let lx = 80; const ly = y + chartH - 18;
+  leyenda.forEach(([col, t]) => { rr(lx, ly - 14, 16, 16, 4); x.fillStyle = col; x.fill(); if (col === '#fff') { x.lineWidth = 2; x.strokeStyle = '#C9D8D2'; x.stroke(); } txt(t, lx + 24, ly + 1, BV.g, 400, 21); font(400, 21); lx += 24 + x.measureText(t).width + 26; });
+  y += chartH + 30;
+  // Lo que vemos
+  txt('Lo que vemos', 56, y + 18, BV.t, 600, 32); y += 40;
+  textoResumen(d).forEach(([t, s], i) => {
+    font(400, 22); const ls = wrap(s, 800); const h = 24 + 30 + ls.length * 29 + 12;
+    rr(56, y, 968, h, 20); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 2; x.strokeStyle = BV.l; x.stroke();
+    x.beginPath(); x.arc(56 + 20 + 22, y + 24 + 22 - 6, 22, 0, Math.PI * 2); x.fillStyle = BV.m; x.fill(); txt(String(i + 1), 98, y + 49, BV.v, 800, 26, 'center');
+    txt(t, 138, y + 40, BV.t, 600, 26); ls.forEach((l, k) => txt(l, 138, y + 72 + k * 29, BV.g, 400, 22));
+    y += h + 12;
+  });
+  // Pie
+  y += 22; const fy = y, fh = 232;
+  x.fillStyle = BV.v; x.fillRect(0, fy, W, fh); x.fillStyle = BV.a; x.fillRect(0, fy + fh, W, 8);
+  const titulo = d.numero === 6 ? 'Sigamos con un plan a tu medida' : d.nivel === 'bajo' ? '¿Quieres que tu display rinda más?' : '¿Quieres más reseñas y más clientes?';
+  txt(titulo, 56, fy + 56, '#fff', 800, 34);
+  const cuerpo = d.numero === 6 ? 'Revisamos tu perfil de Google contigo y armamos un plan para seguir sumando reseñas. Escríbenos y te contamos las opciones.' : 'Revisamos tu perfil de Google contigo y armamos un plan a tu medida. Hay un plan de arranque con precio accesible.';
+  font(400, 23); wrap(cuerpo, 968).forEach((l, k) => txt(l, 56, fy + 92 + k * 30, '#DCEDE8', 400, 23));
+  rr(56, fy + 150, 395, 62, 31); x.fillStyle = BV.a; x.fill(); txt('Escríbenos: 220 143 5851', 82, fy + 191, BV.t, 800, 28);
+  const prox = d.numero === 6 ? ['Fin de tu seguimiento de 90 días', 'Gracias por usar Bien Visto'] : ['Próximo resumen: ' + (opciones.proximo ? fechaLarga(opciones.proximo) : 'en 15 días'), 'Resumen ' + d.numero + ' de 6 de tu seguimiento'];
+  txt(prox[0], 1024, fy + 166, '#CFE5DF', 400, 22, 'right'); txt(prox[1], 1024, fy + 196, '#CFE5DF', 400, 22, 'right');
+  const H = fy + fh + 8;
+  const out = document.createElement('canvas'); out.width = W; out.height = H; out.getContext('2d').drawImage(cv, 0, 0);
+  return out;
+}
+
+/* ===== seguimiento: resúmenes quincenales por WhatsApp ===== */
+const SEG={d:null,cv:{},conf:null};
+const SEG_SALUDO='Hola, soy Israel de Bien Visto. Activamos tu display. Cada 15 días te mandaré por aquí un resumen corto de cómo se está usando. Responde SÍ para recibirlo.';
+const segSumar=(dia,n)=>{const d=new Date(dia+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const segNombre=c=>String(c||'').trim().split(/\s+/)[0]||'';
+const segWa=(tel,texto)=>tel?'https://wa.me/'+tel+'?text='+encodeURIComponent(texto):'';
+const segMensaje=r=>{const n=segNombre(r.contacto);const hola=n?'Hola '+n+', ':'Hola, ';return r.numero===6?hola+'este es el resumen de cierre de tus 90 días con Bien Visto. Si quieres seguir con un plan a tu medida, respóndeme por aquí.':hola+'te comparto el resumen '+r.numero+' de 6 de tu display. Si quieres que revisemos juntos tu perfil de Google, respóndeme por aquí.'};
+R.seg=()=>{$('#main').innerHTML=head()+'<div id="segCuerpo"><p class="sub">Cargando…</p></div>';segCargar()};
+async function segCargar(){try{SEG.d=await apiJson('/api/seguimiento/hoy','GET');if(S.vista==='seg')pintarSeg()}catch(e){const c=$('#segCuerpo');if(c)c.innerHTML='<div class="card"><p class="sub">No se pudo cargar el seguimiento: '+esc(e.message||'error')+'</p></div>'}}
+function pintarSeg(){const d=SEG.d,c=$('#segCuerpo');if(!d||!c)return;SEG.cv={};
+ const nivelChip=n=>`<span class="chip ${n==='bajo'?'c-a':'c-v'}">Actividad ${n}</span>`;
+ const btn=(a,v,n,t,cls)=>`<button class="btn ${cls||'s'} sm" data-sa="${a}" data-v="${esc(v)}" ${n?`data-n="${n}"`:''}>${t}</button>`;
+ const env=d.envios.map(r=>{const k=r.venta_id+'-'+r.numero;const wa=segWa(r.whatsapp,segMensaje(r));
+  return `<div class="card" style="margin:0 0 14px"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 6px"><h2 style="font-size:19px;margin:0">${esc(r.negocio||'Sin nombre')}</h2><span class="chip c-g">Resumen ${r.numero} de 6</span>${nivelChip(r.nivel)}</div>
+  <p class="sub" style="margin:0 0 10px">${esc(r.contacto||'')}${r.whatsapp?' · '+esc(r.whatsapp.slice(2)):' · sin WhatsApp válido'} · ${r.cifras.total} escaneos del ${esc(r.periodo.desde)} al ${esc(r.periodo.hasta)}${r.respondio?'':' · aún no responde SÍ'}</p>
+  <div class="seg-prev" id="prev-${esc(k)}" style="margin:0 0 12px;min-height:80px"><p class="sub">Generando imagen…</p></div>
+  <ol class="sub" style="margin:0 0 12px;padding-left:20px"><li>Copia la imagen.</li><li>Abre el chat de WhatsApp.</li><li>Pega la imagen y envía.</li></ol>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">${btn('copiar',r.venta_id,r.numero,'Copiar imagen','p')}${btn('bajar',r.venta_id,r.numero,'Descargar PNG')}${wa?`<a class="btn s sm" style="text-decoration:none;color:var(--tinta)" href="${esc(wa)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}${btn('enviado',r.venta_id,r.numero,'Marcar enviado','a')}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${r.respondio?'':btn('respondio',r.venta_id,0,'Respondió SÍ')}${btn('omitir',r.venta_id,r.numero,'Omitir este resumen')}${btn('baja',r.venta_id,0,'Dar de baja','d')}</div></div>`}).join('');
+ const sal=d.saludos.map(r=>{const wa=segWa(r.whatsapp,SEG_SALUDO);return `<div class="card" style="margin:0 0 14px"><h2 style="font-size:19px;margin:0 0 4px">${esc(r.negocio||'Sin nombre')}</h2><p class="sub" style="margin:0 0 8px">${esc(r.contacto||'')}${r.whatsapp?' · '+esc(r.whatsapp.slice(2)):' · sin WhatsApp válido'}</p><p style="margin:0 0 10px;max-width:70ch">${esc(SEG_SALUDO)}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${wa?`<a class="btn p sm" style="text-decoration:none;color:var(--crema)" href="${esc(wa)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}${btn('saludo',r.venta_id,0,'Marcar enviado','a')}${btn('baja',r.venta_id,0,'Dar de baja','d')}</div></div>`}).join('');
+ const sin=d.sin_consentimiento.map(r=>`<div class="card" style="margin:0 0 14px"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div><h2 style="font-size:19px;margin:0">${esc(r.negocio||'Sin nombre')}</h2><p class="sub" style="margin:2px 0 0">${esc(r.contacto||'')} · activó el ${esc(r.inicio)}</p></div>${btn('consentimiento',r.venta_id,0,'Registrar consentimiento')}</div></div>`).join('');
+ const vacio=!d.envios.length&&!d.saludos.length&&!d.sin_consentimiento.length;
+ c.innerHTML=(d.activo?'':'<div class="banner"><span>El seguimiento está apagado: las ventas nuevas no entran al calendario.</span></div>')+
+  `<p class="sub" style="max-width:70ch;margin:0 0 14px">Cada 15 días, durante 90 días, a cada cliente con consentimiento le toca un resumen de su display. Niveles por display: bajo menos de ${d.umbrales.bajo} escaneos, alto desde ${d.umbrales.alto}.</p>`+
+  (vacio?'<div class="card"><h2 style="font-size:19px">Hoy no hay nada por enviar</h2><p class="sub">Los resúmenes aparecen aquí el día que les toca, 15 días después de activar cada display.</p></div>':'')+
+  (d.envios.length?`<h2 style="font-size:20px;margin:6px 0 10px">Resúmenes de hoy (${d.envios.length})</h2>${env}`:'')+
+  (d.saludos.length?`<h2 style="font-size:20px;margin:6px 0 10px">Saludos por enviar (${d.saludos.length})</h2>${sal}`:'')+
+  (d.sin_consentimiento.length?`<h2 style="font-size:20px;margin:6px 0 4px">Sin consentimiento registrado (${d.sin_consentimiento.length})</h2><p class="sub" style="margin:0 0 10px;max-width:70ch">No se les manda nada hasta registrar que aceptaron recibir los resúmenes.</p>${sin}`:'');
+ d.envios.forEach(r=>{const k=r.venta_id+'-'+r.numero;dibujarResumen(r,{proximo:r.numero<6?segSumar(r.programado_para,15):null}).then(cv=>{SEG.cv[k]=cv;const h=document.getElementById('prev-'+k);if(h){cv.style.cssText='width:100%;max-width:360px;height:auto;border-radius:12px;border:1px solid var(--borde);display:block';h.textContent='';h.appendChild(cv)}}).catch(()=>{const h=document.getElementById('prev-'+k);if(h)h.innerHTML='<p class="sub">No se pudo generar la imagen.</p>'})})}
+function segBlob(k){return new Promise((ok,no)=>{const cv=SEG.cv[k];if(!cv)return no(new Error('La imagen aún no está lista'));cv.toBlob(b=>b?ok(b):no(new Error('No se pudo crear la imagen')),'image/png')})}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-sa]');if(!b||S.vista!=='seg')return;
+ const a=b.dataset.sa,v=b.dataset.v,n=Number(b.dataset.n||0),k=v+'-'+n;
+ try{
+  if(a==='copiar'){const bl=await segBlob(k);if(!(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem)){toast('Tu navegador no permite copiar la imagen. Usa Descargar PNG.');return}await navigator.clipboard.write([new ClipboardItem({'image/png':bl})]);toast('Imagen copiada. Pégala en el chat de WhatsApp.');return}
+  if(a==='bajar'){const bl=await segBlob(k);const u=URL.createObjectURL(bl),l=document.createElement('a');l.href=u;l.download='resumen-'+n+'-'+v+'.png';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return}
+  const peligro=a==='baja'||a==='omitir'||a==='enviado';
+  if(peligro&&SEG.conf!==a+k){SEG.conf=a+k;const t=b.textContent;b.textContent=a==='enviado'?'¿Ya lo enviaste? Confirma':'Confirma';setTimeout(()=>{if(b.isConnected){b.textContent=t}if(SEG.conf===a+k)SEG.conf=null},4000);return}
+  SEG.conf=null;
+  const url=a==='enviado'||a==='omitir'?`/api/seguimiento/${encodeURIComponent(v)}/envio/${n}/${a}`:`/api/seguimiento/${encodeURIComponent(v)}/${a}`;
+  await apiJson(url,'POST');toast({enviado:'Resumen marcado como enviado',omitir:'Resumen omitido',baja:'Cliente dado de baja',saludo:'Saludo marcado como enviado',respondio:'Anotado: respondió SÍ',consentimiento:'Consentimiento registrado'}[a]||'Listo');await segCargar();
+ }catch(err){toast('No se pudo: '+(err.message||'error'))}});
 })();
 </script>
 
