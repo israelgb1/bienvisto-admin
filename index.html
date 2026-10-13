@@ -294,6 +294,7 @@ const NIVT={nuevo:'Nuevo',confianza:'De confianza'};
 const REQT={reponer:'Reposición',cambiar:'Cambio de negocio'};
 const FOTO_DANO='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150"><rect width="240" height="150" fill="#E9E1D0"/><rect x="70" y="40" width="100" height="70" rx="8" fill="#12302B"/><path d="M95 40 L125 110 M125 40 L110 75" stroke="#FBF6EC" stroke-width="3"/><text x="12" y="138" font-family="sans-serif" font-size="11" fill="#4A5F59">Foto de ejemplo del mockup: display dañado</text></svg>');
 let REQ=[];
+let AVISOS=[];
 const reqPend=()=>REQ.filter(q=>q.est==='pend');
 let SALES=[];
 const facTxt=s=>s.fac==='emitida'?'Factura emitida':s.fac==='si'?'Pide factura'+(s.facEnv?' · enlace enviado '+s.facEnv:''):s.fac==='pend'?'El vendedor aún no pregunta':'Sin factura';
@@ -364,6 +365,7 @@ function pendientes(){const L=[],add=(c,u,v,t,b,a)=>L.push({c,u,v,t,b,a});
   else if(sd.b==='horas')add('Cobros',2,'vta',`<b>${esc(v.n)}</b> lleva ${Math.floor(sd.h/24)} días con ${mxn(sd.m)} sin entregar.`,'Ver saldos','data-gocob');
   else if(sd.b==='tope')add('Cobros',1,'vta',`<b>${esc(v.n)}</b> llegó a su tope de ${mxn(sd.tope)} y no puede activar hasta entregar.`,'Ver saldos','data-gocob')});
  SALES.filter(s=>s.est==='rev').forEach(s=>add('Cobros',1,'vta',`<b>${esc(vn(s.v))}</b> avisó que entregó ${mxn(rest(s))} (BV-${s.rn}).`,'Confirmar',`data-sale="${s.id}"`));
+ AVISOS.filter(a=>a.estado==='pendiente').forEach(a=>add('Cobros',1,'vta',`<b>${esc(a.vendedor)}</b> avisó que entregó ${mxn(a.monto)} en ${a.metodo==='efectivo'?'efectivo':'transferencia'}.`,'Revisar',`data-aviso="${a.id}"`));
  SALES.filter(s=>s.sol&&s.est!=='anulada').forEach(s=>add('Solicitudes',1,'vta',`<b>${esc(vn(s.v))}</b> pide anular BV-${s.rn}: ${esc(s.solM.toLowerCase())}.`,'Revisar',`data-sale="${s.id}"`));
  reqPend().forEach(q=>add('Solicitudes',1,'dis',`<b>${esc(vn(q.v))}</b> pide ${q.tipo==='reponer'?'reponer':'cambiar de negocio'} ${q.f}: ${esc(q.mot.toLowerCase())}.`,'Revisar',`data-req="${q.id}"`));
  V.filter(v=>v.cuP).forEach(v=>add('Cuentas',1,'ven',`<b>${esc(v.n)}</b> pide cambiar su cuenta de cobro a ${esc(bancoDe(v.cuP.clabe))}.`,'Revisar',`data-vd="${v.id}"`));
@@ -578,7 +580,8 @@ Object.assign(S,{isub:'cap',ie:'todos',iv:'todos',iq:'',ip:false,cap:{modo:'uno'
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 V.forEach(v=>{if(v.rol==='vendedor'&&!v.cod)v.cod=codNuevo()});
 async function genFoliosServidor(n){const r=await fetch('/api/displays/batch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cantidad:n})});const j=await r.json();if(!r.ok)throw new Error(j.error||'error');return j}
-async function cargarDisplays(){const rc=await fetch('/api/config');if(rc.ok){const c=await rc.json();PR.p=c.precio_display;PR.c=c.comision_display;PR.pn=c.promo_n;PR.pp=c.promo_precio;TOPE=c.tope_confianza;TOPE_NUEVO=c.tope_nuevo;PRUEBA_MIN=c.prueba_minutos;HORAS=c.horas;RECIBO_MIN=c.recibo_min;LIM_REP=c.lim_rep;DIAS_BONO=c.dias_bono;LEAD_D=c.lead_d;COLCH=c.colch;PARADO_D=c.parado_d;ESC_BAJO=c.esc_bajo;BONOS_ON=c.bonos_on===1;BONOS=[{n:c.bono1_n,b:c.bono1_b},{n:c.bono2_n,b:c.bono2_b},{n:c.bono3_n,b:c.bono3_b}]}const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})))}const rv=await fetch('/api/vendedores');if(rv.ok){const vr=await rv.json();V.splice(0,V.length,...V.filter(x=>x.rol==='admin'),...vr.map(x=>({id:x.id,n:x.nombre,m:x.correo||'',rol:'vendedor',e:x.estado==='activo'?'activo':'inactivo',alta:(x.fecha_registro||'').slice(0,10),nivel:x.nivel,conf:x.nivel==='confianza'?'confianza':undefined,tope:x.nivel==='confianza'?TOPE:TOPE_NUEVO,cu:x.cu,cuP:x.cuP})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();cargarHistorialSrv().catch(()=>{});cargarPreciosSrv().catch(()=>{});cargarVentasSrv().then(()=>render()).catch(()=>toast('No se pudieron cargar las ventas del servidor.'));D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:x.vendedor_id||null,fecha:null,esc:0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false,pr:x.estado==='prueba'&&x.prueba_inicio?{neg:x.negocio_asignado||'Sin negocio',min:Math.max(0,PRUEBA_MIN-Math.floor((Date.now()-Date.parse(x.prueba_inicio.replace(' ','T')+'Z'))/60000))}:undefined})));render()}
+async function cargarAvisosSrv(){try{const r=await fetch('/api/avisos-entrega');if(r.ok){const j=await r.json();AVISOS=j.avisos||[]}}catch(_){}}
+async function cargarDisplays(){const rc=await fetch('/api/config');if(rc.ok){const c=await rc.json();PR.p=c.precio_display;PR.c=c.comision_display;PR.pn=c.promo_n;PR.pp=c.promo_precio;TOPE=c.tope_confianza;TOPE_NUEVO=c.tope_nuevo;PRUEBA_MIN=c.prueba_minutos;HORAS=c.horas;RECIBO_MIN=c.recibo_min;LIM_REP=c.lim_rep;DIAS_BONO=c.dias_bono;LEAD_D=c.lead_d;COLCH=c.colch;PARADO_D=c.parado_d;ESC_BAJO=c.esc_bajo;BONOS_ON=c.bonos_on===1;BONOS=[{n:c.bono1_n,b:c.bono1_b},{n:c.bono2_n,b:c.bono2_b},{n:c.bono3_n,b:c.bono3_b}]}const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})))}const rv=await fetch('/api/vendedores');if(rv.ok){const vr=await rv.json();V.splice(0,V.length,...V.filter(x=>x.rol==='admin'),...vr.map(x=>({id:x.id,n:x.nombre,m:x.correo||'',rol:'vendedor',e:x.estado==='activo'?'activo':'inactivo',alta:(x.fecha_registro||'').slice(0,10),nivel:x.nivel,conf:x.nivel==='confianza'?'confianza':undefined,tope:x.nivel==='confianza'?TOPE:TOPE_NUEVO,cu:x.cu,cuP:x.cuP})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();cargarHistorialSrv().catch(()=>{});cargarPreciosSrv().catch(()=>{});cargarVentasSrv().then(()=>cargarAvisosSrv()).then(()=>render()).catch(()=>toast('No se pudieron cargar las ventas del servidor.'));D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:x.vendedor_id||null,fecha:null,esc:0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false,pr:x.estado==='prueba'&&x.prueba_inicio?{neg:x.negocio_asignado||'Sin negocio',min:Math.max(0,PRUEBA_MIN-Math.floor((Date.now()-Date.parse(x.prueba_inicio.replace(' ','T')+'Z'))/60000))}:undefined})));render()}
 function genFolios(n){const used=new Set(D.map(d=>d.f)),out=[];let guard=0;while(out.length<n&&guard++<n*50){const f=rnd(LETR)+rnd(DIGI)+rnd(LETR)+rnd(DIGI);if(!used.has(f)){used.add(f);out.push(f)}}return out}
 const csvEsc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
 const filaCsv=(f,m)=>[f,'https://ir.bienvisto.com.mx/'+f.toLowerCase(),m.tipo,m.lote,m.costo,m.dest].map(csvEsc).join(',');
@@ -919,6 +922,23 @@ function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filte
   ss.forEach(s=>{s.imp=false;s.rec=false;if(pago){s.est='entregada';s.fc='2026-10-06';s.abono=0}else{s.est='anulada';s.f.forEach(f=>{const d=get(f);d.e='libre';d.cl=null;d.su=null;d.fecha=null;d.esc=0;d.rec=false})}});
   log('Resolvió el adeudo de '+v.n+' ('+mxn(sd.deuda)+'): '+(pago?'pagó':'devolvió los displays'));cerrar();render();toast('Adeudo resuelto. El panel de '+v.n.split(' ')[0]+' se desbloquea')}}
 
+function avisoDlg(id){const a=AVISOS.find(x=>x.id===id);if(!a)return toast('Ese aviso ya no está en la lista.');
+ const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Aviso de entrega</h2><button class="btn s sm" data-x>Cerrar</button></div>
+ <dl class="dl"><dt>Vendedor</dt><dd>${esc(a.vendedor)}</dd><dt>Monto</dt><dd><b>${mxn(a.monto)}</b></dd><dt>Método</dt><dd>${a.metodo==='efectivo'?'Efectivo en mano':'Depósito o transferencia'}</dd>${a.referencia?`<dt>Clave de rastreo</dt><dd><span class="folio">${esc(a.referencia)}</span></dd>`:''}<dt>Enviado</dt><dd>${esc(a.created_at)} UTC</dd></dl>
+ ${a.tiene_comprobante?'<p><button class="btn s" id="avc">Ver comprobante</button></p>':'<p class="hint">Sin comprobante adjunto.</p>'}
+ <div class="row2"><button class="btn p" id="avok">Confirmar entrega</button><button class="btn s" id="avno">Rechazar</button></div>
+ <div id="avrb" hidden style="margin-top:12px"><div class="fld"><label class="lbl" for="avrt">Motivo del rechazo (lo ve el vendedor)</label><textarea class="f" id="avrt" rows="2" maxlength="300"></textarea></div><div class="row2"><button class="btn d" id="avrc">Rechazar aviso</button><button class="btn s" id="avrx">No rechazar</button></div></div>`,true);
+ const recargar=()=>cargarAvisosSrv().then(()=>render());
+ const c=o.querySelector('#avc');if(c)c.onclick=()=>window.open('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/comprobante','_blank','noopener');
+ o.querySelector('#avok').onclick=async()=>{const b=o.querySelector('#avok');b.disabled=true;
+  try{const j=await apiJson('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/confirmar','POST',{});log('Confirmó el aviso de '+a.vendedor+' por '+mxn(a.monto));toast('Entrega de '+a.vendedor+' confirmada');cerrar();await recargar()}
+  catch(e){toast('No se pudo confirmar: '+e.message);b.disabled=false}};
+ o.querySelector('#avno').onclick=()=>{o.querySelector('#avrb').hidden=false;o.querySelector('#avrt').focus()};
+ o.querySelector('#avrx').onclick=()=>{o.querySelector('#avrb').hidden=true};
+ o.querySelector('#avrc').onclick=async()=>{const m=o.querySelector('#avrt').value.trim();if(!m){o.querySelector('#avrt').focus();return toast('Escribe el motivo del rechazo.')}
+  try{await apiJson('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/rechazar','POST',{motivo:m});log('Rechazó el aviso de '+a.vendedor+': '+m);toast('Aviso de '+a.vendedor+' rechazado');cerrar();await recargar()}
+  catch(e){toast('No se pudo rechazar: '+e.message)}};
+}
 function reqDlg(id){const q=REQ.find(x=>x.id===id),d=get(q.f),v=V.find(x=>x.id===q.v),c=d.cl?cln(d.cl):null;
  const libres=D.filter(x=>x.e==='libre'&&(x.v===q.v||(!x.v&&!q.ventaSrv)));
  const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>${q.tipo==='reponer'?'Solicitud de reposición':'Solicitud de cambio de negocio'}</h2><button class="btn s sm" data-x>Cerrar</button></div>
@@ -970,6 +990,7 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-bmeta]')){bmetaDlg();return}
  if(el=t.closest('[data-gobono]')){S.vista='vta';S.vsub='bonos';render();return}
  if(el=t.closest('[data-req]')){reqDlg(el.dataset.req);return}
+ if(el=t.closest('[data-aviso]')){avisoDlg(el.dataset.aviso);return}
  if(el=t.closest('[data-niv]')){const [i,n]=el.dataset.niv.split(':');nivelSet(i,n);return}
  if(t.closest('[data-hmas]')){HIST_N+=50;R.his();return}
  if(t.closest('[data-hcsv]')){descargarHistorialCsv();return}
