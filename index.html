@@ -264,13 +264,13 @@ const IC={cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" 
 let V=[{id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'}];
 const CL=[];
 const D=[];
-const PRB={ini:14,vend:9,exp:3,lib:2};
+let PRB={ini:0,vend:0,exp:0,en_curso:0};
 const LOTES=[];
 D.forEach((d,i)=>{d.tipo='Reseñas de Google';d.lote=i<15?'L1':'L2';d.alta=i<15?'2026-09-01':'2026-09-25'});
 let LEAD_D=14,COLCH=5,PARADO_D=30,ESC_BAJO=20;
-const SC=Array.from({length:30},(_,i)=>Math.round(36+i*4.2+((i*7)%11)*3));
+let SC=new Array(30).fill(0);
 /* dinero: precio fijo, ventas y saldos */
-let PR={p:350,c:150,costo:50,isr:1,pn:3,pp:900};
+let PR={p:350,c:150,costo:0,isr:1,pn:3,pp:900};
 const PH=[{f:'2026-09-01',p:350,c:150,q:'Isra Guerrero',n:'Precio inicial'}];
 let TOPE=2000,TOPE_NUEVO=600,HORAS=72,RECIBO_MIN=5,DIAS_BONO=5,PRUEBA_MIN=30,LIM_REP=2;
 const titOk=(v,t)=>{const n=String(v.n).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ').filter(Boolean),b=String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');return n.every(w=>b.includes(w))};
@@ -314,7 +314,7 @@ const vn=id=>id?V.find(v=>v.id===id).n:'Bodega';
 const mis=()=>admin()?D:D.filter(d=>d.v===S.yo);
 const cln=id=>CL.find(c=>c.id===id);
 const chipE=e=>({activo:'c-v',prueba:'c-a',libre:'c-a',retirado:'c-g',perdido:'c-r',inactivo:'c-g',invitado:'c-a'}[e]||'c-g');
-const hoyStr=()=>'2026-10-06 '+String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
+const hoyStr=()=>new Date().toLocaleString('sv-SE',{timeZone:'America/Mexico_City'}).slice(0,16);
 function log(x){LOG.unshift({t:hoyStr(),q:yo().n,x})}
 let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2800)}
 
@@ -357,7 +357,7 @@ R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fech
 const HOYMX=new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'}),[AY,AM,AD]=HOYMX.split('-').map(Number);
 const MESA=HOYMX.slice(0,7),MESP=(AM===1?`${AY-1}-12`:`${AY}-${String(AM-1).padStart(2,'0')}`),DIAS_MES=new Date(AY,AM,0).getDate(),DIA_HOY=AD;
 const MESNOM=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];const nomMes=ym=>MESNOM[+ym.slice(5)-1];const NOMC=ym=>{const n=nomMes(ym);return n[0].toUpperCase()+n.slice(1)};
-const vmes=m=>SALES.filter(s=>s.est!=='anulada'&&s.fecha.slice(0,7)===m);
+const vmes=m=>SALES.filter(s=>s.est!=='anulada'&&s.est!=='pendp'&&s.fecha.slice(0,7)===m);
 const nDs=a=>a.reduce((x,s)=>x+s.f.length,0);
 function pendientes(){const L=[],add=(c,u,v,t,b,a)=>L.push({c,u,v,t,b,a});
  V.filter(v=>v.rol==='vendedor').forEach(v=>{const sd=saldoV(v.id);
@@ -401,13 +401,13 @@ function resAdm(){const vend=V.filter(v=>v.rol==='vendedor'),act=D.filter(d=>d.e
   if(v.e!=='activo')return ['Inactivo','c-g','g'];if(sd.m===0)return ['Sin saldo','c-g',''];if(pct>=.7||rest_<=24)return ['Por vencer','c-a','w'];return ['En regla','c-v','']};
  const riesgo=sdv.filter(x=>estV(x)[2]==='r'),vigila=sdv.filter(x=>estV(x)[2]==='w'),worst=[...sdv].sort((a,b)=>b.sd.h-a.sd.h).find(x=>x.sd.m>0);
  const kCob=riesgo.length?'bd':(vigila.length||rev.length)?'wa':'ok';
- const kRit=wk[4]>=wprev*.9?'ok':wk[4]>=wprev*.5?'wa':'bd',conv=PRB.vend/PRB.ini,kPru=conv>=.5?'ok':conv>=.3?'wa':'bd';
+ const kRit=wk[4]>=wprev*.9?'ok':wk[4]>=wprev*.5?'wa':'bd',term=PRB.vend+PRB.exp,conv=term?PRB.vend/term:0,kPru=!term?'wa':conv>=.5?'ok':conv>=.3?'wa':'bd';
  const bajos=act.filter(d=>d.esc<ESC_BAJO),prom=act.length?Math.round(act.reduce((a,d)=>a+d.esc,0)/act.length):0,kUso=!bajos.length?'ok':bajos.length>act.length*.4?'bd':'wa';
  const cnt={};act.forEach(d=>{if(d.cl)cnt[d.cl]=(cnt[d.cl]||0)+1});const solos=Object.entries(cnt).filter(([,n])=>n===1);
  const anul=SALES.filter(s=>s.est==='anulada'&&s.fecha.slice(0,7)===MESA).length,fp=SALES.filter(s=>s.fac==='si'&&s.est!=='anulada'),bpag=(BONOS_ON?BONO_PREV:[]).filter(r=>!r.pag).reduce((a,r)=>a+r.b,0),repMes=vend.reduce((a,v)=>a+(v.repMes||0),0);
  /* lectura del día: frases que salen de los números */
  const IS=[];
- IS.push(cobP>0&&cobO>=cobP?['up',`Ya superaste todo ${nomMes(MESP)} (${mxn(cobP)}) con ${mxn(cobO-cobP)} de ventaja, en ${DIA_HOY} de ${DIAS_MES} días.`]:['up',`Llevas ${Math.round(cobO/Math.max(1,cobP)*100)}% de lo que cobraste en ${nomMes(MESP)} completo, con ${DIA_HOY} de ${DIAS_MES} días del mes.`]);
+ IS.push(cobP>0&&cobO>=cobP?['up',`Ya superaste todo ${nomMes(MESP)} (${mxn(cobP)}) con ${mxn(cobO-cobP)} de ventaja, en ${DIA_HOY} de ${DIAS_MES} días.`]:(cobP>0?['up',`Llevas ${Math.round(cobO/cobP*100)}% de lo que cobraste en ${nomMes(MESP)} completo, con ${DIA_HOY} de ${DIAS_MES} días del mes.`]:['up',`Sin cobros en ${nomMes(MESP)} para comparar; llevas ${mxn(cobO)} con ${DIA_HOY} de ${DIAS_MES} días del mes.`]));
  if(worst&&worst.sd.h>=HORAS*.66)IS.push(['clock',`El dinero más antiguo en la calle es de ${esc(worst.v.n.split(' ')[0])}: ${mxn(worst.sd.m)} desde hace ${Math.floor(worst.sd.h/24)} días, con plazo de ${HORAS} h.`,'Ver saldos','data-gocob']);
  if(iv.est!=='ok')IS.push(['box',`Tienes ${iv.lib.length} libres y vendes ~${iv.dem.toFixed(1)} por semana: alcanzan para ${iv.cob===null?'—':iv.cob.toFixed(1)} semanas y producir tarda ${LEAD_D} días. Un lote de ${iv.qty} te cubre 4 semanas más el colchón.`,'Registrar lote','data-invsug']);
  const cerca=vend.filter(v=>v.e==='activo'&&sigMeta(entMesV(v.id))&&sigMeta(entMesV(v.id)).n-entMesV(v.id)<=2);
@@ -437,7 +437,7 @@ function resAdm(){const vend=V.filter(v=>v.rol==='vendedor'),act=D.filter(d=>d.e
   ${tile(kCob,'¿Me entregan a tiempo?',riesgo.length?riesgo.length+' en riesgo':vigila.length?vigila.length+' por vencer':'Todo al día',worst?`${esc(worst.v.n.split(' ')[0])} · ${mxn(worst.sd.m)} · ${Math.floor(worst.sd.h/24)} días`:'Nadie te debe entregas','data-gocob')}
   ${tile(iv.est,'¿Tengo displays para vender?',iv.cob===null?'—':iv.cob.toFixed(1)+' sem',`${iv.lib.length} libres · reordenar en ${iv.reord}`,'data-invgo',`<div class="gg" role="img" aria-label="${iv.lib.length} libres, punto de reorden ${iv.reord}"><i style="width:${Math.min(100,iv.lib.length/Math.max(1,iv.reord*1.5)*100)}%"></i><u style="left:${Math.min(100,iv.reord/Math.max(1,iv.reord*1.5)*100)}%"></u></div>`)}
   ${tile(kRit,'¿Voy a buen ritmo?',wk[4]+' esta sem.',`Promedio de las 4 anteriores: ${wprev.toFixed(1)}`,'',`<div class="spk">${spark(wk,120,34,'#0E6B5C')}</div>`)}
-  ${tile(kPru,'¿Las pruebas venden?',Math.round(conv*100)+'%',`${PRB.vend} de ${PRB.ini} pruebas terminaron en venta`)}
+  ${tile(kPru,'¿Las pruebas venden?',Math.round(conv*100)+'%',`${term?PRB.vend+' de '+term+' pruebas terminadas acabaron en venta':'Aún no terminan pruebas en 30 días'}`)}
   ${tile(kUso,'¿Se usan los displays?',prom+' por display',bajos.length?`${bajos.length} con menos de ${ESC_BAJO} escaneos esta semana`:'Todos arriba del umbral')}
  </div>
  <section class="card lec" aria-label="Lo que dicen los números"><h2>Lo que dicen los números</h2><ul>${ISr.map(([i,t,b,a])=>`<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IN[i]}</svg><span>${t}</span>${b?`<button class="btn s sm" ${a}>${b}</button>`:''}</li>`).join('')}</ul></section>
@@ -478,15 +478,16 @@ function moneyKpis(){if(admin()){const ms=mesVentas(),sd=V.filter(v=>v.rol==='ve
   return `<div class="kpis m"><div class="kpi"><b>${mxn(ms.reduce((a,s)=>a+tot(s),0))}</b><span>cobrado en ${nomMes(MESA)} (${nd} displays)</span></div><div class="kpi"><b>${mxn(sd.reduce((a,x)=>a+x.m,0))}</b><span>de Bien Visto en manos de vendedores</span></div><div class="kpi"><b>${SALES.filter(s=>s.est==='rev').length}</b><span>avisos de entrega por confirmar</span></div><div class="kpi"><b>${mxn(Math.round(nd*k.ut))}</b><span>tu utilidad estimada del mes</span></div></div>`}
   const sd=saldoV(S.yo),ok=SALES.filter(s=>s.v===S.yo&&s.est!=='anulada'&&s.fecha>='2026-10-01');
   return `<div class="kpis m"><div class="kpi"><b>${mxn(ok.reduce((a,s)=>a+com(s),0))}</b><span>tu comisión de ${nomMes(MESA)}</span></div><div class="kpi"><b>${mxn(sd.net)}</b><span>debes entregar</span></div><div class="kpi"><b>${mxn(sd.m)}</b><span>de ${mxn(sd.tope)} de tope</span></div><div class="kpi"><b>${mxn(PR.p)}</b><span>precio fijo · comisión ${mxn(PR.c)}</span></div></div>`}
-function chart(){const W=640,H=200,L=34,B=26,T=10,R_=12;const mx=Math.ceil(Math.max(...SC)/50)*50;const x=i=>L+i*(W-L-R_)/29,y=v=>T+(H-T-B)*(1-v/mx);
+const fechaDeDia=k=>{const d=new Date(HOY);d.setDate(d.getDate()+k);return d.toLocaleDateString('en-CA')};
+function chart(){const W=640,H=200,L=34,B=26,T=10,R_=12;const mx=Math.max(50,Math.ceil(Math.max(...SC)/50)*50);const x=i=>L+i*(W-L-R_)/29,y=v=>T+(H-T-B)*(1-v/mx);
  const pts=SC.map((v,i)=>[x(i),y(v)]);const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
  const area=line+`L${x(29)} ${H-B}L${x(0)} ${H-B}Z`;const ticks=[0,mx/2,mx];
  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Escaneos por día, últimos 30 días. Subió de ${SC[0]} a ${SC[29]} diarios."><rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>${ticks.map(t=>`<line x1="${L}" x2="${W-R_}" y1="${y(t)}" y2="${y(t)}" stroke="#E3ECE8" stroke-width="1"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${t}</text>`).join('')}
  <path d="${area}" fill="#0E6B5C" fill-opacity=".12"/><path d="${line}" fill="none" stroke="#0E6B5C" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
  <line id="cx" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="#6B897E" stroke-width="1" visibility="hidden"/><circle id="cd" r="5" fill="#0E6B5C" stroke="#fff" stroke-width="2" visibility="hidden"/>
  <circle cx="${pts[29][0]}" cy="${pts[29][1]}" r="5" fill="#0E6B5C" stroke="#fff" stroke-width="2"/>
- <text x="${x(0)}" y="${H-6}">${fmt('2026-09-07')}</text><text x="${x(29)}" y="${H-6}" text-anchor="end">${fmt('2026-10-06')}</text><rect id="hit" x="${L}" y="0" width="${W-L-R_}" height="${H-B}" fill="transparent"/></svg>`}
-function wireChart(){const h=$('#hit');if(!h)return;const W=640,H=200,L=34,B=26,T=10,R_=12;const mx=Math.ceil(Math.max(...SC)/50)*50;
+ <text x="${x(0)}" y="${H-6}">${fmt(fechaDeDia(-29))}</text><text x="${x(29)}" y="${H-6}" text-anchor="end">${fmt(fechaDeDia(0))}</text><rect id="hit" x="${L}" y="0" width="${W-L-R_}" height="${H-B}" fill="transparent"/></svg>`}
+function wireChart(){const h=$('#hit');if(!h)return;const W=640,H=200,L=34,B=26,T=10,R_=12;const mx=Math.max(50,Math.ceil(Math.max(...SC)/50)*50);
  const mv=e=>{const r=h.getBoundingClientRect();const px=(e.clientX-r.left)/r.width;const i=Math.max(0,Math.min(29,Math.round(px*29)));const xx=L+i*(W-L-R_)/29,yy=T+(H-T-B)*(1-SC[i]/mx);
   $('#cx').setAttribute('x1',xx);$('#cx').setAttribute('x2',xx);$('#cx').setAttribute('visibility','visible');$('#cd').setAttribute('cx',xx);$('#cd').setAttribute('cy',yy);$('#cd').setAttribute('visibility','visible');
   const d=new Date(HOY);d.setDate(d.getDate()-(29-i));$('#ro').textContent=d.getDate()+' '+MES[d.getMonth()]+' · '+SC[i]+' escaneos'};
@@ -561,6 +562,14 @@ async function cambiarVendedorSrv(id,cambios){const j=await apiJson('/api/vended
 async function asignarSrv(folios,vendedor){if(!folios.length)return;try{await apiJson('/api/displays/asignar','POST',{folios,vendedor_id:vendedor});S.sel.clear();await cargarDisplays();toast(folios.length+' displays asignados a '+vn(vendedor))}catch(e){toast('No se asignaron: '+e.message)}}
 
 async function cargarHistorialSrv(){const r=await fetch('/api/auditoria');if(!r.ok)return;const rows=await r.json();const f=s=>{const d=new Date(String(s).replace(' ','T')+'Z');if(isNaN(d))return '';const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};LOG.splice(0,LOG.length,...rows.map(x=>({t:f(x.fecha),q:(V.find(v=>v.m===x.usuario)||{n:x.usuario}).n,x:x.accion+(x.folio_afectado?' ('+x.folio_afectado+')':'')})));if(S.vista==='his')R.his()}
+// Escaneos por día (30 días) y resumen de pruebas, desde el servidor.
+async function cargarMetricasSrv(){
+  const [rs,rp]=await Promise.all([fetch('/api/escaneos/serie'),fetch('/api/pruebas/resumen')]);
+  if(rs.ok){const serie=await rs.json();if(Array.isArray(serie)&&serie.length===30)SC=serie}
+  if(rp.ok){const p=await rp.json();PRB={ini:Number(p.ini)||0,vend:Number(p.vend)||0,exp:Number(p.exp)||0,en_curso:Number(p.en_curso)||0}}
+}
+// Cada display toma la fecha y el cliente de la venta que lo vendió; así las cifras por vendedor y por mes cuadran.
+function enlazarDisplays(){const byF=new Map(D.map(d=>[d.f,d]));SALES.forEach(s=>s.f.forEach(f=>{const d=byF.get(f);if(d){d.fecha=s.fecha;d.cl=s.cl}}))}
 async function cargarPreciosSrv(){const r=await fetch('/api/precios');if(!r.ok)return;const rows=await r.json();PH.splice(0,PH.length,...rows.map(x=>({f:(x.fecha||'').slice(0,10),p:x.precio,c:x.comision,q:(V.find(v=>v.m===x.usuario)||{n:x.usuario}).n,n:x.nota||''})));if(S.vista==='cfg')R.cfg()}
 async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ventas'),fetch('/api/solicitudes')]);if(!rv.ok||!rs.ok)throw new Error('ventas');const ventas=await rv.json(),solicitudes=await rs.json();
  const ESTV={pendiente:'pendp',rev:'rev',cobrada:'cobrada',entregada:'entregada',anulada:'anulada'},FACV={pide:'si',emitida:'emitida',no:'no'};
@@ -569,8 +578,10 @@ async function cargarVentasSrv(){const [rv,rs]=await Promise.all([fetch('/api/ve
  const visibles=ventas;
  const anul={};solicitudes.filter(q=>q.tipo==='anular'&&q.estado==='pendiente').forEach(q=>{anul[q.venta_id]=q});
  REQ.splice(0,REQ.length,...solicitudes.filter(q=>q.tipo!=='anular'&&q.estado==='pendiente').map(q=>({id:q.id,v:q.vendedor_id,f:q.folio,tipo:q.tipo,est:'pend',mot:q.motivo||'Sin motivo',nota:q.nota||'',nuevo:q.nuevo_negocio||'',t:(q.created_at||'').slice(0,10),foto:null,r:'',ventaSrv:true})));
- CL.splice(0,CL.length,...visibles.map(v=>({id:v.id,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})));
- SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=((v.fecha_cobro||v.created_at)||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:v.id,f:(v.folios||[]).map(x=>x.folio),p:PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:fechaMX(v.created_at),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));}
+ const clKey=v=>'cli-'+String((v.negocio||'')+'|'+(v.whatsapp||'')).toLowerCase().replace(/\s+/g,' ').trim();
+ const clMap=new Map();visibles.forEach(v=>{const k=clKey(v);if(!clMap.has(k))clMap.set(k,{id:k,n:v.negocio||'Sin nombre',p:v.contacto||'',wa:v.whatsapp||'',m:''})});
+ CL.splice(0,CL.length,...clMap.values());
+ SALES.splice(0,SALES.length,...visibles.map(v=>{const q=anul[v.id];const creado=((v.fecha_cobro||v.created_at)||'').replace(' ','T')+'Z';return{id:v.id,rn:v.id.slice(3),v:v.vendedor_id,cl:clKey(v),f:(v.folios||[]).map(x=>x.folio),p:(v.folios&&v.folios[0]&&Number(v.folios[0].precio))||PR.p,pn:PR.pn,pp:PR.pp,c:PR.c,tot:v.total,com:v.comision_total,ent:v.a_entregar,m:v.metodo,ref:v.referencia||'',est:ESTV[v.estado],fac:FACV[v.factura]||'no',imp:v.impago===1,abono:v.entregado||0,fecha:fechaMX(v.created_at),h:Math.max(0,Math.floor((ahora-Date.parse(creado))/3600000)),sol:!!q,solM:q?(q.motivo||'Sin motivo'):'',solId:q?q.id:null,aj:0,ajA:false,rec:false,foto:v.comprobante_key?'/api/ventas/'+encodeURIComponent(v.id)+'/comprobante':null,fc:null,ventaSrv:true,srv:v.estado}}));enlazarDisplays();}
 async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cambios);await cargarDisplays()}
 
 /* ---------- Inventario ---------- */
@@ -581,7 +592,7 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 V.forEach(v=>{if(v.rol==='vendedor'&&!v.cod)v.cod=codNuevo()});
 async function genFoliosServidor(n){const r=await fetch('/api/displays/batch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cantidad:n})});const j=await r.json();if(!r.ok)throw new Error(j.error||'error');return j}
 async function cargarAvisosSrv(){try{const r=await fetch('/api/avisos-entrega');if(r.ok){const j=await r.json();AVISOS=j.avisos||[]}}catch(_){}}
-async function cargarDisplays(){const rc=await fetch('/api/config');if(rc.ok){const c=await rc.json();PR.p=c.precio_display;PR.c=c.comision_display;PR.pn=c.promo_n;PR.pp=c.promo_precio;TOPE=c.tope_confianza;TOPE_NUEVO=c.tope_nuevo;PRUEBA_MIN=c.prueba_minutos;HORAS=c.horas;RECIBO_MIN=c.recibo_min;LIM_REP=c.lim_rep;DIAS_BONO=c.dias_bono;LEAD_D=c.lead_d;COLCH=c.colch;PARADO_D=c.parado_d;ESC_BAJO=c.esc_bajo;BONOS_ON=c.bonos_on===1;BONOS=[{n:c.bono1_n,b:c.bono1_b},{n:c.bono2_n,b:c.bono2_b},{n:c.bono3_n,b:c.bono3_b}]}const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})))}const rv=await fetch('/api/vendedores');if(rv.ok){const vr=await rv.json();V.splice(0,V.length,...V.filter(x=>x.rol==='admin'),...vr.map(x=>({id:x.id,n:x.nombre,m:x.correo||'',rol:'vendedor',e:x.estado==='activo'?'activo':'inactivo',alta:(x.fecha_registro||'').slice(0,10),nivel:x.nivel,conf:x.nivel==='confianza'?'confianza':undefined,tope:x.nivel==='confianza'?TOPE:TOPE_NUEVO,cu:x.cu,cuP:x.cuP})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();cargarHistorialSrv().catch(()=>{});cargarPreciosSrv().catch(()=>{});cargarVentasSrv().then(()=>cargarAvisosSrv()).then(()=>render()).catch(()=>toast('No se pudieron cargar las ventas del servidor.'));D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:x.vendedor_id||null,fecha:null,esc:0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false,pr:x.estado==='prueba'&&x.prueba_inicio?{neg:x.negocio_asignado||'Sin negocio',min:Math.max(0,PRUEBA_MIN-Math.floor((Date.now()-Date.parse(x.prueba_inicio.replace(' ','T')+'Z'))/60000))}:undefined})));render()}
+async function cargarDisplays(){const rc=await fetch('/api/config');if(rc.ok){const c=await rc.json();PR.p=c.precio_display;PR.c=c.comision_display;PR.pn=c.promo_n;PR.pp=c.promo_precio;TOPE=c.tope_confianza;TOPE_NUEVO=c.tope_nuevo;PRUEBA_MIN=c.prueba_minutos;HORAS=c.horas;RECIBO_MIN=c.recibo_min;LIM_REP=c.lim_rep;DIAS_BONO=c.dias_bono;LEAD_D=c.lead_d;COLCH=c.colch;PARADO_D=c.parado_d;ESC_BAJO=c.esc_bajo;BONOS_ON=c.bonos_on===1;BONOS=[{n:c.bono1_n,b:c.bono1_b},{n:c.bono2_n,b:c.bono2_b},{n:c.bono3_n,b:c.bono3_b}]}const rl=await fetch('/api/lotes');if(rl.ok){const lr=await rl.json();LOTES.splice(0,LOTES.length,...lr.map(l=>({id:l.id,f:(l.created_at||'').slice(0,10),n:l.cantidad,tipo:l.tipo,costo:l.costo,dest:l.destino,nota:l.nota})));const conCosto=LOTES.filter(l=>Number(l.costo)>0&&Number(l.n)>0),uds=conCosto.reduce((a,l)=>a+Number(l.n),0);if(uds)PR.costo=Math.round(conCosto.reduce((a,l)=>a+Number(l.costo)*Number(l.n),0)/uds*100)/100}const rv=await fetch('/api/vendedores');if(rv.ok){const vr=await rv.json();V.splice(0,V.length,...V.filter(x=>x.rol==='admin'),...vr.map(x=>({id:x.id,n:x.nombre,m:x.correo||'',rol:'vendedor',e:x.estado==='activo'?'activo':'inactivo',alta:(x.fecha_registro||'').slice(0,10),nivel:x.nivel,conf:x.nivel==='confianza'?'confianza':undefined,tope:x.nivel==='confianza'?TOPE:TOPE_NUEVO,cu:x.cu,cuP:x.cuP,repMes:Number(x.rep_mes)||0})))}const r=await fetch('/api/displays');if(!r.ok)throw new Error('listado');const rows=await r.json();cargarHistorialSrv().catch(()=>{});cargarPreciosSrv().catch(()=>{});cargarMetricasSrv().then(()=>{enlazarDisplays();render()}).catch(()=>{});cargarVentasSrv().then(()=>cargarAvisosSrv()).then(()=>render()).catch(()=>toast('No se pudieron cargar las ventas del servidor.'));D.splice(0,D.length,...rows.map(x=>({f:x.folio,e:x.estado,cl:null,su:x.negocio_asignado||null,v:x.vendedor_id||null,fecha:null,esc:Number(x.esc7)||0,esc30:Number(x.esc30)||0,tipo:'Reseñas de Google',lote:x.lote_id,alta:(x.created_at||'').slice(0,10),rec:false,pr:x.estado==='prueba'&&x.prueba_inicio?{neg:x.negocio_asignado||'Sin negocio',min:Math.max(0,PRUEBA_MIN-Math.floor((Date.now()-Date.parse(x.prueba_inicio.replace(' ','T')+'Z'))/60000))}:undefined})));render()}
 function genFolios(n){const used=new Set(D.map(d=>d.f)),out=[];let guard=0;while(out.length<n&&guard++<n*50){const f=rnd(LETR)+rnd(DIGI)+rnd(LETR)+rnd(DIGI);if(!used.has(f)){used.add(f);out.push(f)}}return out}
 const csvEsc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
 const filaCsv=(f,m)=>[f,'https://ir.bienvisto.com.mx/'+f.toLowerCase(),m.tipo,m.lote,m.costo,m.dest].map(csvEsc).join(',');
