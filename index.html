@@ -1049,6 +1049,36 @@ if(el=t.closest('[data-anular]')){anularDlg(el.dataset.anular);return}
  if(el=t.closest('[data-c]')){cliDlg(el.dataset.c);return}
 });
 document.addEventListener('change',e=>{if(e.target.id==='yo'){S.yo=e.target.value;S.sel.clear();S.fv='todos';S.fe='todos';S.q='';S.cq='';render();return}const c=e.target.closest('[data-ck]');if(c){c.checked?S.sel.add(c.dataset.ck):S.sel.delete(c.dataset.ck);R.dis()}});
+/* ---------- Ordenar tablas al tocar el encabezado ---------- */
+// Un toque ordena A→Z por esa columna; otro toque regresa al orden anterior.
+const ORDEN={};
+const tablasOrdenables=()=>[...document.querySelectorAll('#main table')].filter(t=>!t.classList.contains('frm')&&!t.classList.contains('calc')&&t.tBodies[0]);
+const textoCelda=(r,c)=>{const td=r.cells[c];return td?td.textContent.replace(/\s+/g,' ').trim():''};
+const numCelda=s=>{const m=s.replace(/[−]/g,'-').replace(/[$,%\s]/g,'');return /^-?\d+(\.\d+)?$/.test(m)?Number(m):null};
+function ordKey(t){return S.vista+'|'+tablasOrdenables().indexOf(t)}
+function aplicarOrdenes(){
+  tablasOrdenables().forEach(t=>{
+    const tb=t.tBodies[0],filas=[...tb.rows],k=ordKey(t),col=ORDEN[k];
+    filas.forEach((r,i)=>{if(!('oi' in r.dataset))r.dataset.oi=i});
+    const ths=t.tHead?[...t.tHead.rows[0].cells]:[];
+    ths.forEach((th,i)=>{if(!th.textContent.trim())return;th.tabIndex=0;th.style.cursor='pointer';th.setAttribute('aria-sort',col===i?'ascending':'none');th.classList.toggle('ord',col===i)});
+    let ord;
+    if(col===undefined||filas.length<2||filas.some(r=>r.cells.length!==ths.length)){ord=filas.slice().sort((a,b)=>a.dataset.oi-b.dataset.oi)}
+    else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col),nx=numCelda(x),ny=numCelda(y);
+      if(nx!==null&&ny!==null)return nx-ny;return x.localeCompare(y,'es',{numeric:true,sensitivity:'base'})})}
+    if(ord.some((r,i)=>r!==filas[i])) ord.forEach(r=>tb.appendChild(r));
+  });
+}
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th');if(!th||!th.parentElement||!th.closest('thead'))return;
+  const t=th.closest('table');if(!t||!tablasOrdenables().includes(t)||!th.textContent.trim())return;
+  const k=ordKey(t),c=th.cellIndex;
+  if(ORDEN[k]===c)delete ORDEN[k];else ORDEN[k]=c;
+  aplicarOrdenes();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='TH')e.target.click()});
+let ordenesBusy=false;
+new MutationObserver(()=>{if(ordenesBusy)return;ordenesBusy=true;try{aplicarOrdenes()}finally{ordenesBusy=false}}).observe($('#main'),{childList:true,subtree:true});
 cargarDisplays().catch(()=>toast('No se pudo cargar el inventario del servidor.'));render();
 })();
 </script>
