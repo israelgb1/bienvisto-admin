@@ -13,6 +13,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 h1,h2,h3{font-family:var(--fd);font-weight:700;letter-spacing:-.015em;line-height:1.15;text-wrap:balance}
 [hidden]{display:none!important}
 .show-m{display:none}
+.mbar,.mscrim{display:none}
 .app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
 .side{background:var(--verde);color:var(--crema);padding:20px 12px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;height:100dvh;align-self:start}
 .brand{display:flex;align-items:center;gap:10px;padding:0 8px}
@@ -120,21 +121,26 @@ input.f[aria-invalid=true]{border-color:var(--danger);background:var(--danger-bg
 .mini{display:flex;flex-direction:column}.mini button{display:flex;gap:12px;align-items:center;text-align:left;padding:10px 0;border-top:1px solid var(--borde);min-height:52px}.mini button:first-child{border:0}
 @media (max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
 @media (max-width:860px){
- .app{grid-template-columns:1fr}
- .side{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10;gap:0;border-top:1px solid var(--verde-h)}
- .brand,.side .foot{display:none}
- .nav{flex-direction:row;flex:1;gap:2px;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;min-width:0}.nav::-webkit-scrollbar{display:none}
- .nav button{flex-direction:column;gap:2px;font-size:11.5px;padding:6px 4px;flex:1 0 66px;align-items:center;min-height:52px;text-align:center}
- .nav .nav-salir{display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:11.5px;padding:6px 4px;flex:1 0 66px;min-height:52px;text-align:center}
- main{padding:16px 16px 96px}.top h1{font-size:28px}
+ .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+ .mbar{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:9;background:var(--verde);color:var(--crema);padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px}
+ .mbtn{position:relative;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:inherit;flex:none}
+ .mbtn:hover{background:rgba(251,246,236,.12)}
+ .mbtn svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+ .mbadge{position:absolute;top:6px;right:6px;width:11px;height:11px;border-radius:50%;background:var(--ambar);border:2px solid var(--verde)}
+ .mtit{font:600 18px/1.1 var(--fd);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .side{position:fixed;top:0;left:0;bottom:0;width:min(300px,86vw);height:auto;align-self:auto;gap:12px;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:25;border-radius:0 20px 20px 0;transform:translateX(-104%);visibility:hidden;transition:transform .22s ease,visibility 0s linear .22s}
+ .side.abierto{transform:none;visibility:visible;transition:transform .22s ease,visibility 0s}
+ .side .nav{gap:2px}.side .nav button{min-height:44px;padding:9px 12px}.side .foot{padding-bottom:8px}
+ .mscrim{display:block;position:fixed;inset:0;background:rgba(18,48,43,.55);z-index:24}
+ main{padding:16px 16px 32px}.top h1{font-size:28px}
  .hide-m{display:none}.show-m{display:block}
  td,th{padding:10px 8px}.acts .btn{padding:8px 10px;font-size:13.5px;min-height:40px}.acts{flex-direction:column;align-items:stretch}
  .ov.right .dlg{border-radius:24px 24px 0 0;align-self:flex-end;width:100%;max-height:88%}.ov.right{align-items:flex-end}
  .bar{grid-template-columns:90px minmax(0,1fr) 30px}
- .toast{bottom:84px}
+ .toast{bottom:24px}
  .who{width:100%}.who select{flex:1}
 }
-@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.toast,.side{transition:none!important}}
 /* resumen del administrador */
 .ng{font:600 11.5px/1 var(--fb);letter-spacing:.09em;text-transform:uppercase;opacity:.7;padding:10px 12px 2px}
 .nb{margin-left:auto;min-width:22px;height:22px;border-radius:11px;background:var(--ambar);color:var(--tinta);font:600 12.5px/22px var(--fb);text-align:center;padding:0 6px}
@@ -184,7 +190,7 @@ button.kp:hover{background:#F6FAF8}
 .opp .t{flex:1;min-width:0;font-size:14.5px;line-height:1.3}.opp .t small{display:block;color:var(--muted);font-size:13px}
 .note2{font-size:13px;color:var(--muted);margin:10px 0 0;line-height:1.4}
 @media (max-width:1100px){.c3{grid-column:span 6}.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
-@media (max-width:860px){.ng{display:none}.nb{position:absolute;top:2px;right:6px;margin:0;min-width:18px;height:18px;line-height:18px;font-size:11px}.nav button{position:relative}.lr{grid-template-columns:minmax(0,1fr) auto}.lr .sb2{grid-column:1/-1;order:3}}
+@media (max-width:860px){.lr{grid-template-columns:minmax(0,1fr) auto}.lr .sb2{grid-column:1/-1;order:3}}
 @media (max-width:560px){.c3{grid-column:span 12}}
 @media (max-width:860px){.ib-f{flex:1 1 100%;order:5;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}.ib-f button{flex:none}.ib-h .ib-t{margin-left:auto}}
 /* resumen v2 */
@@ -261,7 +267,9 @@ button.sm:hover{background:#F6FAF8}
 </style>
 
 <div class="app">
- <aside class="side">
+ <header class="mbar"><button type="button" class="mbtn" id="mbtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu-lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="mbadge" id="mbadge" hidden></span></button><span class="mtit" id="mtit"></span></header>
+ <div class="mscrim" id="mscrim" hidden></div>
+ <aside class="side" id="menu-lateral">
   <div class="brand"><svg viewBox="0 41 311 203" aria-hidden="true"><path fill="#FBF6EC" d="M62 163 L62 78 A16 16 0 0 0 30 78 L30 163 A16 16 0 0 0 62 163 Z"/><path fill="#FBF6EC" fill-rule="evenodd" d="M30 163 A59 59 0 1 1 148 163 A59 59 0 1 1 30 163 Z M62 163 A27 27 0 1 0 116 163 A27 27 0 1 0 62 163 Z"/><path fill="#F2A71B" d="M159.53 150 L197.35 215.5 A15 15 0 0 0 223.33 215.5 L298.96 84.5 A15 15 0 0 0 272.98 69.5 L210.34 178 L185.51 135 A15 15 0 0 0 159.53 150 Z"/></svg><div><b>Bien Visto</b><small id="rolTxt">Administrador</small></div></div>
   <nav class="nav" id="nav" aria-label="Secciones"></nav>
   <div class="foot"><span id="quien" class="quien"></span><a class="salir" href="/cdn-cgi/access/logout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Cerrar sesión</a></div>
@@ -359,10 +367,11 @@ function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Cliente
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
  const GR={res:'Operación',vta:'Dinero',seg:'Postventa',cfg:'Sistema'};
  $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('')+'<a class="nav-salir" href="/cdn-cgi/access/logout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Salir</a>';
+ {const mb=$('#mbadge');if(mb)mb.hidden=!(NC.res>0)}
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor';if(PERM&&PERM.correo)$('#quien').textContent=PERM.correo}
 const TIT={seg:'Resúmenes quincenales',reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}</div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
-function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'||S.vista==='seg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
+function render(){{const mt=$('#mtit');if(mt)mt.textContent=TIT[S.vista]||''}if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'||S.vista==='seg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
 let PERM=null;const puede=p=>!!(PERM&&Array.isArray(PERM.permisos)&&PERM.permisos.includes(p));
 const PERM_TAB={seg:'ver_cobros',res:'ver_resumen',dis:'ver_inventario',cli:'ver_inventario',inv:'ver_inventario',reg:'inventario_registrar',ven:'ver_vendedores',vta:'ver_cobros',cfg:['precios_venta','costos_impuestos','reglas_vendedores'],his:'ver_historial',per:'accesos'};
 const tabOk=k=>{const q=PERM_TAB[k];if(!q||!PERM)return true;return Array.isArray(q)?q.some(puede):puede(q)};
@@ -1175,8 +1184,16 @@ function nivelSet(id,n){const v=V.find(x=>x.id===id);if(nivel(v)===n)return;camb
 async function cuAprobar(id){const v=V.find(x=>x.id===id);if(!v||!v.cuP)return;try{await apiJson('/api/cuentas-cobro/aprobar','POST',{id:v.cuP.id})}catch(e){toast('No se pudo aprobar: '+e.message);return}await cargarDisplays().catch(()=>{});log('Aprobó el cambio de cuenta de cobro de '+v.n);render();vendDlg(id);toast('Cuenta de '+v.n.split(' ')[0]+' actualizada')}
 async function cuRechazar(id){const v=V.find(x=>x.id===id);if(!v||!v.cuP)return;try{await apiJson('/api/cuentas-cobro/rechazar','POST',{id:v.cuP.id})}catch(e){toast('No se pudo rechazar: '+e.message);return}await cargarDisplays().catch(()=>{});log('Rechazó el cambio de cuenta de cobro de '+v.n);render();vendDlg(id)}
 
+const mq860=window.matchMedia('(max-width:860px)');
+function menuAbrir(v){const sd=$('#menu-lateral'),sc=$('#mscrim'),b=$('#mbtn');if(!sd||!b)return;sd.classList.toggle('abierto',v);sc.hidden=!v;b.setAttribute('aria-expanded',String(v));b.setAttribute('aria-label',v?'Cerrar menú':'Abrir menú');if(v){const f=sd.querySelector('#nav [aria-current=page]')||sd.querySelector('#nav button');if(f)f.focus()}}
+function menuCerrar(volver){const sd=$('#menu-lateral');if(!sd||!sd.classList.contains('abierto'))return;menuAbrir(false);if(volver){const b=$('#mbtn');if(b)b.focus()}}
+if(mq860.addEventListener)mq860.addEventListener('change',e=>{if(!e.matches)menuCerrar(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov'))menuCerrar(true)});
 document.addEventListener('click',e=>{const t=e.target;
  let el;
+ if(t.closest('#mbtn')){menuAbrir(!$('#menu-lateral').classList.contains('abierto'));return}
+ if(t.closest('#mscrim')){menuCerrar(true);return}
+ if(t.closest('#nav [data-v]')||t.closest('.side .salir'))menuCerrar(false);
  if(el=t.closest('#nav [data-v]')){S.vista=el.dataset.v;S.sel.clear();render();return}
  if(t.closest('[data-stop]'))return;
  if(el=t.closest('[data-des]')){e.stopPropagation();desDlg(el.dataset.des);return}
