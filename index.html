@@ -925,11 +925,24 @@ function adeudoDlg(id){const v=V.find(x=>x.id===id),sd=saldoV(id),ss=SALES.filte
 function avisoDlg(id){const a=AVISOS.find(x=>x.id===id);if(!a)return toast('Ese aviso ya no está en la lista.');
  const o=ov(`<div class="row2" style="margin:0 0 8px;justify-content:space-between"><h2>Aviso de entrega</h2><button class="btn s sm" data-x>Cerrar</button></div>
  <dl class="dl"><dt>Vendedor</dt><dd>${esc(a.vendedor)}</dd><dt>Monto</dt><dd><b>${mxn(a.monto)}</b></dd><dt>Método</dt><dd>${a.metodo==='efectivo'?'Efectivo en mano':'Depósito o transferencia'}</dd>${a.referencia?`<dt>Clave de rastreo</dt><dd><span class="folio">${esc(a.referencia)}</span></dd>`:''}<dt>Enviado</dt><dd>${esc(a.created_at)} UTC</dd></dl>
- ${a.tiene_comprobante?'<p><button class="btn s" id="avc">Ver comprobante</button></p>':'<p class="hint">Sin comprobante adjunto.</p>'}
+ ${a.tiene_comprobante?'<p><button class="btn s" id="avc">Ver comprobante</button></p><div id="avv" hidden style="margin:0 0 12px"></div>':'<p class="hint">Sin comprobante adjunto.</p>'}
  <div class="row2"><button class="btn p" id="avok">Confirmar entrega</button><button class="btn s" id="avno">Rechazar</button></div>
  <div id="avrb" hidden style="margin-top:12px"><div class="fld"><label class="lbl" for="avrt">Motivo del rechazo (lo ve el vendedor)</label><textarea class="f" id="avrt" rows="2" maxlength="300"></textarea></div><div class="row2"><button class="btn d" id="avrc">Rechazar aviso</button><button class="btn s" id="avrx">No rechazar</button></div></div>`,true);
  const recargar=()=>cargarAvisosSrv().then(()=>render());
- const c=o.querySelector('#avc');if(c)c.onclick=()=>window.open('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/comprobante','_blank','noopener');
+ const c=o.querySelector('#avc');
+ if(c)c.onclick=async()=>{const box=o.querySelector('#avv');
+  if(!box.hidden){box.hidden=true;box.replaceChildren();c.textContent='Ver comprobante';return}
+  c.disabled=true;c.textContent='Cargando comprobante…';
+  try{const r=await fetch('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/comprobante');if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'error')}
+   const blob=await r.blob();const url=URL.createObjectURL(blob);
+   const visor=blob.type==='application/pdf'
+    ?`<iframe src="${url}" title="Comprobante" style="width:100%;height:420px;border:1px solid var(--borde);border-radius:12px;background:#fff"></iframe>`
+    :`<img src="${url}" alt="Comprobante del depósito" style="width:100%;max-height:420px;object-fit:contain;border-radius:12px;border:1px solid var(--borde);background:#fff">`;
+   box.innerHTML=visor+`<p class="hint" style="margin:6px 0 0"><a href="${url}" target="_blank" rel="noopener">Abrir en otra pestaña</a></p>`;
+   box.hidden=false;c.textContent='Ocultar comprobante';
+  }catch(e){toast('No se pudo cargar el comprobante: '+e.message);c.textContent='Ver comprobante'}
+  finally{c.disabled=false}
+ };
  o.querySelector('#avok').onclick=async()=>{const b=o.querySelector('#avok');b.disabled=true;
   try{const j=await apiJson('/api/avisos-entrega/'+encodeURIComponent(a.id)+'/confirmar','POST',{});log('Confirmó el aviso de '+a.vendedor+' por '+mxn(a.monto));toast('Entrega de '+a.vendedor+' confirmada');cerrar();await recargar()}
   catch(e){toast('No se pudo confirmar: '+e.message);b.disabled=false}};
