@@ -1068,20 +1068,26 @@ const tablasOrdenables=()=>[...document.querySelectorAll('#main table')].filter(
 const textoCelda=(r,c)=>{const td=r.cells[c];return td?td.textContent.replace(/\s+/g,' ').trim():''};
 const numCelda=s=>{const m=s.replace(/[−]/g,'-').replace(/[$,%\s]/g,'');return /^-?\d+(\.\d+)?$/.test(m)?Number(m):null};
 function ordKey(t){return S.vista+'|'+tablasOrdenables().indexOf(t)}
+// Una columna es numérica si todos sus valores con dato son números (montos, cantidades, %). Teléfonos y folios no cuentan.
+function colNumerica(t,c){const n=t.tHead.rows[0].cells.length,vals=[...t.tBodies[0].rows].filter(r=>r.cells.length===n).map(r=>textoCelda(r,c)).filter(v=>v!==''&&v!=='·');
+  return vals.length>0&&vals.every(v=>numCelda(v)!==null&&v.replace(/\D/g,'').length<10)}
+const vacio=s=>s===''||s==='·';
 function aplicarOrdenes(){
   tablasOrdenables().forEach(t=>{
-    const tb=t.tBodies[0],filas=[...tb.rows],k=ordKey(t),col=ORDEN[k];
+    const tb=t.tBodies[0],filas=[...tb.rows],k=ordKey(t),ord0=ORDEN[k],col=ord0?ord0.c:undefined,sent=ord0&&ord0.dir==='desc'?-1:1;
     filas.forEach((r,i)=>{if(!('oi' in r.dataset))r.dataset.oi=i});
     const ths=t.tHead?[...t.tHead.rows[0].cells]:[];
     const anchos=ANCHOS[k]||{};let fijo=false;
-    ths.forEach((th,i)=>{if(th.textContent.trim()){th.tabIndex=0;th.style.cursor='pointer';th.setAttribute('aria-sort',col===i?'ascending':'none');th.classList.toggle('ord',col===i)}
+    ths.forEach((th,i)=>{if(th.textContent.trim()){th.tabIndex=0;th.style.cursor='pointer';th.setAttribute('aria-sort',col===i?(sent<0?'descending':'ascending'):'none');th.classList.toggle('ord',col===i)}
       if(!th.querySelector('.rz')){const h=document.createElement('span');h.className='rz';h.setAttribute('aria-hidden','true');th.appendChild(h)}
       if(anchos[i]){th.style.width=anchos[i]+'px';fijo=true}});
     t.classList.toggle('fijo',fijo);
     let ord;
     if(col===undefined||filas.length<2||filas.some(r=>r.cells.length!==ths.length)){ord=filas.slice().sort((a,b)=>a.dataset.oi-b.dataset.oi)}
-    else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col),nx=numCelda(x),ny=numCelda(y);
-      if(nx!==null&&ny!==null)return nx-ny;return x.localeCompare(y,'es',{numeric:true,sensitivity:'base'})})}
+    else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col);
+      if(vacio(x)||vacio(y))return vacio(x)-vacio(y);// los vacíos siempre al final
+      const nx=numCelda(x),ny=numCelda(y);
+      if(nx!==null&&ny!==null)return sent*(nx-ny);return sent*x.localeCompare(y,'es',{numeric:true,sensitivity:'base'})})}
     if(ord.some((r,i)=>r!==filas[i])) ord.forEach(r=>tb.appendChild(r));
     const datos=ord.filter(r=>r.cells.length===ths.length);
     const tot=datos.length,pags=Math.max(1,Math.ceil(tot/FILAS));
@@ -1151,7 +1157,7 @@ document.addEventListener('click',e=>{
   const th=e.target.closest('th');if(!th||!th.parentElement||!th.closest('thead'))return;
   const t=th.closest('table');if(!t||!tablasOrdenables().includes(t)||!th.textContent.trim())return;
   const k=ordKey(t),c=th.cellIndex;
-  if(ORDEN[k]===c)delete ORDEN[k];else ORDEN[k]=c;
+  if(ORDEN[k]&&ORDEN[k].c===c)delete ORDEN[k];else ORDEN[k]={c,dir:colNumerica(t,c)?'desc':'asc'};
   PAG[k]=0;
   aplicarOrdenes();
 });
