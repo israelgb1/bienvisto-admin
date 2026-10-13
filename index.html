@@ -23,7 +23,13 @@ h1,h2,h3{font-family:var(--fd);font-weight:700;letter-spacing:-.015em;line-heigh
 .nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .nav button:hover{background:rgba(251,246,236,.12)}
 .nav button[aria-current=page]{background:var(--crema);color:var(--verde)}
-.side .foot{margin-top:auto;font-size:13px;opacity:.85;padding:0 8px}
+.side .foot{margin-top:auto;font-size:13px;padding:0 8px;display:grid;gap:6px}
+.side .quien{opacity:.85;overflow-wrap:anywhere}
+.side .salir,.nav .nav-salir{display:flex;align-items:center;gap:10px;color:var(--crema);text-decoration:none;font-weight:600;border-radius:12px}
+.side .salir{font-size:15px;padding:9px 4px;min-height:44px}
+.side .salir svg,.nav .nav-salir svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.side .salir:hover{text-decoration:underline}
+.nav .nav-salir{display:none}
 main{padding:24px 32px 64px;min-width:0;max-width:1360px;width:100%}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-bottom:20px}
 .top h1{font-size:34px;flex:1;min-width:200px}
@@ -119,6 +125,7 @@ input.f[aria-invalid=true]{border-color:var(--danger);background:var(--danger-bg
  .brand,.side .foot{display:none}
  .nav{flex-direction:row;flex:1;gap:2px;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;min-width:0}.nav::-webkit-scrollbar{display:none}
  .nav button{flex-direction:column;gap:2px;font-size:11.5px;padding:6px 4px;flex:1 0 66px;align-items:center;min-height:52px;text-align:center}
+ .nav .nav-salir{display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:11.5px;padding:6px 4px;flex:1 0 66px;min-height:52px;text-align:center}
  main{padding:16px 16px 96px}.top h1{font-size:28px}
  .hide-m{display:none}.show-m{display:block}
  td,th{padding:10px 8px}.acts .btn{padding:8px 10px;font-size:13.5px;min-height:40px}.acts{flex-direction:column;align-items:stretch}
@@ -257,7 +264,7 @@ button.sm:hover{background:#F6FAF8}
  <aside class="side">
   <div class="brand"><svg viewBox="0 41 311 203" aria-hidden="true"><path fill="#FBF6EC" d="M62 163 L62 78 A16 16 0 0 0 30 78 L30 163 A16 16 0 0 0 62 163 Z"/><path fill="#FBF6EC" fill-rule="evenodd" d="M30 163 A59 59 0 1 1 148 163 A59 59 0 1 1 30 163 Z M62 163 A27 27 0 1 0 116 163 A27 27 0 1 0 62 163 Z"/><path fill="#F2A71B" d="M159.53 150 L197.35 215.5 A15 15 0 0 0 223.33 215.5 L298.96 84.5 A15 15 0 0 0 272.98 69.5 L210.34 178 L185.51 135 A15 15 0 0 0 159.53 150 Z"/></svg><div><b>Bien Visto</b><small id="rolTxt">Administrador</small></div></div>
   <nav class="nav" id="nav" aria-label="Secciones"></nav>
-  <div class="foot">admin.bienvisto.com.mx</div>
+  <div class="foot"><span id="quien" class="quien"></span><a class="salir" href="/cdn-cgi/access/logout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Cerrar sesión</a></div>
  </aside>
  <main id="main" tabindex="-1"></main>
 </div>
@@ -351,8 +358,8 @@ function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Cliente
  const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial',per:'Permisos'};
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
  const GR={res:'Operación',vta:'Dinero',cfg:'Sistema'};
- $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('');
- $('#rolTxt').textContent=admin()?'Administrador':'Vendedor'}
+ $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('')+'<a class="nav-salir" href="/cdn-cgi/access/logout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Salir</a>';
+ $('#rolTxt').textContent=admin()?'Administrador':'Vendedor';if(PERM&&PERM.correo)$('#quien').textContent=PERM.correo}
 const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}</div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
 function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
