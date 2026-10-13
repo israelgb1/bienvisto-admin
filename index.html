@@ -925,7 +925,13 @@ async function pintarDatosPago(){const box=$('#dpago');if(!box)return;box.innerH
 // Documentación descargable: el servidor la arma en el momento; aquí solo se baja el archivo.
 function pintarDocumentacion(){const main=$('#main');if(!main||main.querySelector('#docu'))return;
  const card=document.createElement('div');card.className='card';card.id='docu';
- card.innerHTML='<h2 style="font-size:19px">Documentación del sistema</h2><p class="sub" style="max-width:70ch">Un archivo Markdown con cómo funciona Bien Visto: negocio, reglas, valores actuales, interfaces, permisos, infraestructura, esquema de la base y estado operativo. Se arma al descargarlo, así que siempre sale con los datos al día. No incluye claves, datos bancarios ni correos de personas.</p><button class="btn s" id="docbtn">Descargar documentación (.md)</button>';
+ card.style.cssText='display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;justify-content:space-between';
+ card.innerHTML='<div style="display:flex;gap:16px;align-items:flex-start;flex:1 1 360px;min-width:0">'
+  +'<span aria-hidden="true" style="flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:var(--menta);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0E6B5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></span>'
+  +'<div style="min-width:0"><h2 style="font-size:19px;margin:0 0 4px">Documentación del sistema</h2>'
+  +'<p class="sub" style="margin:0;max-width:62ch">Cómo funciona Bien Visto, con los valores vigentes, las interfaces, los permisos, la infraestructura y el estado operativo de hoy. No incluye claves, datos bancarios ni correos de personas.</p>'
+  +'<p class="hint" style="margin:8px 0 0">Archivo Markdown (.md) · se arma al descargarlo</p></div></div>'
+  +'<button class="btn p" id="docbtn" style="flex:0 0 auto"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Descargar .md</button>';
  main.appendChild(card);
  card.querySelector('#docbtn').onclick=descargarDocumentacion}
 async function descargarDocumentacion(){const b=$('#docbtn');if(b)b.disabled=true;
