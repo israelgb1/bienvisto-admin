@@ -73,6 +73,9 @@ td .n{font-weight:600;line-height:1.25}td .m{font-size:13px;color:var(--muted);l
 th .rz{position:absolute;top:0;right:0;bottom:0;width:10px;cursor:col-resize;touch-action:none;z-index:1}
 th .rz:hover,th .rz.on{background:rgba(31,74,58,.16)}
 th{position:relative}
+.tbl-bar{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:0 0 8px;font-size:14px;color:var(--muted)}
+.tbl-bar span{padding:0 4px}
+.tbl-bar button[disabled]{opacity:.45;cursor:default}
 table.fijo{table-layout:fixed;width:100%}
 table.fijo td,table.fijo th{overflow:hidden;text-overflow:ellipsis}
 .folio{font:600 18px/1 var(--fd);letter-spacing:.08em;color:var(--verde)}
@@ -1077,6 +1080,12 @@ function aplicarOrdenes(){
     else{ord=filas.slice().sort((a,b)=>{const x=textoCelda(a,col),y=textoCelda(b,col),nx=numCelda(x),ny=numCelda(y);
       if(nx!==null&&ny!==null)return nx-ny;return x.localeCompare(y,'es',{numeric:true,sensitivity:'base'})})}
     if(ord.some((r,i)=>r!==filas[i])) ord.forEach(r=>tb.appendChild(r));
+    const datos=ord.filter(r=>r.cells.length===ths.length);
+    const tot=datos.length,pags=Math.max(1,Math.ceil(tot/FILAS));
+    PAG[k]=Math.min(PAG[k]||0,pags-1);const ini=PAG[k]*FILAS;
+    datos.forEach((r,i)=>{const vis=i>=ini&&i<ini+FILAS;if(r.hidden===vis)r.hidden=!vis});
+    ord.filter(r=>r.cells.length!==ths.length).forEach(r=>{if(r.hidden)r.hidden=false});
+    barraTabla(t,k,tot,pags,ini);
   });
 }
 // Ancho de columnas: arrastra el borde derecho del encabezado. Se guarda en este navegador.
@@ -1095,12 +1104,52 @@ document.addEventListener('pointermove',e=>{if(!RZ)return;const w=Math.max(40,Ma
 function finRZ(){if(!RZ)return;const k=ordKey(RZ.t);const w=RZ.w2||Math.round(RZ.w);ANCHOS[k]=ANCHOS[k]||{};ANCHOS[k][RZ.i]=w;guardarAnchos();RZ.h.classList.remove('on');RZ=null;rzFin=Date.now()}
 document.addEventListener('pointerup',finRZ);
 document.addEventListener('pointercancel',finRZ);
+// Paginación de 100 filas, botón de CSV y diálogo para elegir qué bajar.
+const FILAS=100,PAG={};
+function barraTabla(t,k,tot,pags,ini){
+  const anc=t.closest('.tw')||t;
+  let b=anc.previousElementSibling;
+  if(!(b&&b.classList.contains('tbl-bar')&&b.dataset.k===k)){b=document.createElement('div');b.className='tbl-bar';b.dataset.k=k;anc.parentNode.insertBefore(b,anc)}
+  const p=PAG[k]||0,a=Math.min(tot,ini+FILAS);
+  const pag=pags>1?`<button class="btn s sm" data-pag="-1" data-k="${k}" ${p===0?'disabled':''} aria-label="Página anterior">‹</button><span>Página ${p+1} de ${pags}</span><button class="btn s sm" data-pag="1" data-k="${k}" ${p>=pags-1?'disabled':''} aria-label="Página siguiente">›</button>`:'';
+  const html=pag+`<span>${tot?(ini+1)+'–'+a+' de '+tot+' filas':'Sin filas'}</span><button class="btn s sm" data-csv="${k}">Descargar CSV</button>`;
+  if(b.dataset.html!==html){b.innerHTML=html;b.dataset.html=html}
+}
+function filasCsv(k,soloPagina){
+  const t=tablasOrdenables().find(x=>ordKey(x)===k);if(!t)return null;
+  const ths=[...t.tHead.rows[0].cells],cols=ths.map((th,i)=>i).filter(i=>ths[i].textContent.trim()&&!ths[i].querySelector('.sr'));
+  const txt=x=>String(x||'').replace(/\s+/g,' ').trim();
+  const esc=x=>'"'+txt(x).replace(/"/g,'""')+'"';
+  const datos=[...t.tBodies[0].rows].filter(r=>r.cells.length===ths.length);
+  const sel=soloPagina?datos.filter(r=>!r.hidden):datos;
+  return [cols.map(i=>esc(ths[i].textContent)).join(',')].concat(sel.map(r=>cols.map(i=>esc(r.cells[i].textContent)).join(','))).join('\r\n');
+}
+function descargarCsv(k,soloPagina){
+  const csv=filasCsv(k,soloPagina);if(csv==null)return;
+  const u=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=u;a.download='bienvisto-'+k.split('|')[0]+'-'+new Date().toISOString().slice(0,10)+(soloPagina?'-pagina':'')+'.csv';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function csvPedir(k){
+  const t=tablasOrdenables().find(x=>ordKey(x)===k);if(!t)return;
+  const n=t.tHead.rows[0].cells.length,tot=[...t.tBodies[0].rows].filter(r=>r.cells.length===n).length;
+  if(tot<=FILAS){descargarCsv(k,false);return}
+  const p=PAG[k]||0,ini=p*FILAS+1,a=Math.min(tot,ini+FILAS-1);
+  ov(`<h2>Descargar CSV</h2><p class="sub">La tabla tiene ${tot} filas. ¿Qué quieres bajar?</p><div style="display:flex;flex-direction:column;gap:8px"><button class="btn p" data-csvop="pagina" data-k="${k}">Solo estas ${a-ini+1} filas (${ini}–${a})</button><button class="btn s" data-csvop="todas" data-k="${k}">Todas las ${tot} filas</button><button class="btn s" data-x>Cancelar</button></div>`);
+}
+document.addEventListener('click',e=>{
+  const t0=e.target.closest?e.target:null;if(!t0)return;
+  const pg=t0.closest('[data-pag]');if(pg&&!pg.disabled){PAG[pg.dataset.k]=(PAG[pg.dataset.k]||0)+Number(pg.dataset.pag);aplicarOrdenes();return}
+  const cs=t0.closest('[data-csv]');if(cs){csvPedir(cs.dataset.csv);return}
+  const op=t0.closest('[data-csvop]');if(op){cerrar();descargarCsv(op.dataset.k,op.dataset.csvop==='pagina');return}
+});
 document.addEventListener('click',e=>{
   if(e.target.closest&&e.target.closest('.rz'))return;if(Date.now()-rzFin<400)return;
   const th=e.target.closest('th');if(!th||!th.parentElement||!th.closest('thead'))return;
   const t=th.closest('table');if(!t||!tablasOrdenables().includes(t)||!th.textContent.trim())return;
   const k=ordKey(t),c=th.cellIndex;
   if(ORDEN[k]===c)delete ORDEN[k];else ORDEN[k]=c;
+  PAG[k]=0;
   aplicarOrdenes();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='TH')e.target.click()});
