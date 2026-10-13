@@ -267,7 +267,7 @@ const fmtAnio=d=>{const x=new Date(d+'T12:00:00');return x.getDate()+' '+MES[x.g
 const dias=d=>Math.round((HOY-new Date(d+'T12:00:00'))/864e5);
 const ERR='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6M12 16.5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const INFO='<svg viewBox="0 0 24 24" fill="none" stroke="#0E6B5C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5M12 7.5v.5"/></svg>';
-const IC={cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
+const IC={reg:'<path d="M12 5v14M5 12h14"/>',cfg:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',vta:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',res:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',ven:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',dis:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 17h4"/>',cli:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',inv:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',his:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>'};
 
 /* datos inventados */
 let V=[{id:'isra',n:'Isra Guerrero',m:'israelegb@gmail.com',rol:'admin',e:'activo',alta:'2026-09-01'}];
@@ -338,15 +338,15 @@ document.addEventListener('keydown',e=>{const o=$('#ov');if(!o)return;
   if(!o.contains(document.activeElement)){e.preventDefault();a.focus()}else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}}});
 
 /* navegación */
-function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario']);
- const map={inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial'};
+function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
+ const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial'};
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
  const GR={res:'Operación',vta:'Dinero',cfg:'Sistema'};
  $('#nav').innerHTML=items.map(([k])=>(admin()&&GR[k]?`<div class="ng">${GR[k]}</div>`:'')+`<button data-v="${k}" ${S.vista===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${map[k]}${NC[k]?`<span class="nb" aria-label="${NC[k]} pendientes">${NC[k]}</span>`:''}</button>`).join('');
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor'}
-const TIT={inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial'};
+const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}<label class="who">Ver como <select id="yo" aria-label="Ver como">${V.filter(v=>v.e==='activo').map(v=>`<option value="${v.id}" ${v.id===S.yo?'selected':''}>${esc(v.n)} (${v.rol==='admin'?'administrador':'vendedor'})</option>`).join('')}</select></label></div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
-function render(){if(!admin()&&(S.vista==='inv'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';nav();R[S.vista]()}
+function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';nav();R[S.vista]()}
 
 const R={};
 R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fecha&&dias(d.fecha)<=30&&d.e!=='libre'),lib=m.filter(d=>d.e==='libre');
@@ -596,7 +596,7 @@ async function guardarConfigSrv(cambios){await apiJson('/api/config','PATCH',cam
 /* ---------- Inventario ---------- */
 const FOLIO_RE=/^[A-HJ-KM-NP-Z][2-9][A-HJ-KM-NP-Z][2-9]$/,LETR='ABCDEFGHJKLMNPQRSTUVWXYZ',DIGI='23456789',HOYS=new Date().toISOString().slice(0,10);
 const TIPOS=['Reseñas de Google','Otro tipo (descríbelo en la nota)'];
-Object.assign(S,{isub:'cap',ie:'todos',iv:'todos',iq:'',ip:false,cap:{modo:'uno',tipo:TIPOS[0],dest:'',costo:String(PR.costo),nota:'',folio:'',qty:'10',gen:[],texto:''}});
+Object.assign(S,{isub:'lotes',ie:'todos',iv:'todos',iq:'',ip:false,cap:{modo:'uno',tipo:TIPOS[0],dest:'',costo:String(PR.costo),nota:'',folio:'',qty:'10',gen:[],texto:''}});
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 V.forEach(v=>{if(v.rol==='vendedor'&&!v.cod)v.cod=codNuevo()});
 async function genFoliosServidor(n){const r=await fetch('/api/displays/batch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cantidad:n})});const j=await r.json();if(!r.ok)throw new Error(j.error||'error');return j}
@@ -664,14 +664,15 @@ R.inv=()=>{const iv=invStats(),inv=LOTES.reduce((a,l)=>a+l.n*l.costo,0),calle=iv
  <div class="gg" role="img" aria-label="${iv.lib.length} libres, punto de reorden ${iv.reord}"><i style="width:${Math.min(100,iv.lib.length/g*100)}%"></i><u style="left:${Math.min(100,iv.reord/g*100)}%"></u></div>
  <p class="hint">Se calcula con tus ventas de las últimas 4 semanas, el tiempo de producción y un colchón de ${COLCH}. Los ajustas en Ajustes.</p></div>
  <div>${iv.qty>0?'':`<span class="hint">Por ahora no hace falta producir.</span>`}</div></section>
- <div class="tabs2" role="group" aria-label="Sección de inventario">${[['cap','Registrar'],['lotes','Lotes ('+LOTES.length+')'],['lista','Inventario ('+D.length+')']].map(([k,t])=>`<button data-isub="${k}" aria-pressed="${S.isub===k}">${t}</button>`).join('')}</div>
- ${S.isub==='cap'?invCap():S.isub==='lotes'?invLotes():invLista()}`;
- if(S.isub==='cap'){capRes();const c=S.cap,on=(id,f)=>{const e=$('#'+id);if(e)e.oninput=ev=>{f(ev.target);capRes()}};
-  on('capf',t=>{t.value=t.value.toUpperCase().replace(/[^A-Z0-9]/g,'');c.folio=t.value});on('capq',t=>{c.qty=t.value});on('captx',t=>{c.texto=t.value});
-  on('capcosto',t=>{c.costo=t.value});on('capnota',t=>{c.nota=t.value});
-  $('#captipo').onchange=e=>{c.tipo=e.target.value;capRes()};$('#capdest').onchange=e=>{c.dest=e.target.value;capRes()}}
+ <div class="tabs2" role="group" aria-label="Sección de inventario">${[['lotes','Lotes ('+LOTES.length+')'],['lista','Inventario ('+D.length+')']].map(([k,t])=>`<button data-isub="${k}" aria-pressed="${S.isub===k}">${t}</button>`).join('')}</div>
+ ${S.isub==='lotes'?invLotes():invLista()}`;
  if(S.isub==='lista'){$('#iq').oninput=e=>{S.iq=e.target.value;const p=e.target.selectionStart;R.inv();const i=$('#iq');i.focus();i.setSelectionRange(p,p)};
   $('#ie').onchange=e=>{S.ie=e.target.value;R.inv()};$('#ivn').onchange=e=>{S.iv=e.target.value;R.inv()};$('#ip').onchange=e=>{S.ip=e.target.checked;R.inv()}}};
+R.reg=()=>{
+ $('#main').innerHTML=head()+invCap();capRes();const c=S.cap,on=(id,f)=>{const e=$('#'+id);if(e)e.oninput=ev=>{f(ev.target);capRes()}};
+  on('capf',t=>{t.value=t.value.toUpperCase().replace(/[^A-Z0-9]/g,'');c.folio=t.value});on('capq',t=>{c.qty=t.value});on('captx',t=>{c.texto=t.value});
+  on('capcosto',t=>{c.costo=t.value});on('capnota',t=>{c.nota=t.value});
+  $('#captipo').onchange=e=>{c.tipo=e.target.value;capRes()};$('#capdest').onchange=e=>{c.dest=e.target.value;capRes()}};
 R.cli=()=>{const m=mis(),ids=[...new Set(m.filter(d=>d.cl).map(d=>d.cl))];const q=S.cq.toLowerCase();const rows=CL.filter(c=>ids.includes(c.id)&&(c.n+' '+c.p).toLowerCase().includes(q));
  $('#main').innerHTML=head()+`<div class="tbar"><input type="search" id="cq" placeholder="Buscar cliente, negocio o persona" aria-label="Buscar clientes" value="${esc(S.cq)}"></div><div class="tw"><table><thead><tr><th>Cliente</th><th class="hide-m">Contacto</th><th class="num">Displays</th>${admin()?'<th class="hide-m">Vendedor</th>':''}</tr></thead><tbody>${rows.length?rows.map(c=>{const ds=m.filter(d=>d.cl===c.id),vs=[...new Set(ds.map(d=>d.v))];return `<tr class="row" data-c="${c.id}"><td><div class="n">${esc(c.n)}</div><div class="m">${[...new Set(ds.map(d=>d.su))].map(esc).join(' · ')}</div></td><td class="hide-m"><div class="n">${esc(c.p)}</div><div class="m">${esc(c.wa)}</div></td><td class="num">${ds.length}</td>${admin()?`<td class="hide-m">${vs.map(v=>esc(vn(v))).join(', ')}</td>`:''}</tr>`}).join(''):`<tr><td colspan="4"><div class="empty"><b>Nadie coincide.</b>Prueba con otra palabra.</div></td></tr>`}</tbody></table></div>`;
  $('#cq').oninput=e=>{S.cq=e.target.value;const p=e.target.selectionStart;R.cli();const i=$('#cq');i.focus();i.setSelectionRange(p,p)}};
@@ -1032,8 +1033,8 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-precio]')){precioDlg();return}
  if(el=t.closest('[data-gocfg]')){S.vista='cfg';render();return}
  if(el=t.closest('[data-invgo]')){S.vista='inv';S.isub='lista';S.ip=el.dataset.invgo==='parados';if(S.ip){S.ie='libre';S.iv='todos';S.iq=''}render();return}
- if(el=t.closest('[data-invcap]')){S.vista='inv';S.isub='cap';render();return}
- if(el=t.closest('[data-invsug]')){const iv=invStats();S.vista='inv';S.isub='cap';Object.assign(S.cap,{modo:'lote',qty:String(iv.qty||10),gen:[]});render();return}
+ if(el=t.closest('[data-invcap]')){S.vista='reg';render();return}
+ if(el=t.closest('[data-invsug]')){const iv=invStats();S.vista='reg';Object.assign(S.cap,{modo:'lote',qty:String(iv.qty||10),gen:[]});render();return}
  if(el=t.closest('[data-isub]')){S.isub=el.dataset.isub;R.inv();return}
  if(el=t.closest('[data-imodo]')){S.cap.modo=el.dataset.imodo;R.inv();return}
  if(el=t.closest('[data-capchip]')){S.cap.folio=genFolios(1)[0];R.inv();const f=$('#capf');f&&f.focus();return}
@@ -1041,7 +1042,7 @@ document.addEventListener('click',e=>{const t=e.target;
  if(el=t.closest('[data-capgen]')){const n=Number(S.cap.qty);if(!Number.isInteger(n)||n<1||n>100){showErr(document,'capq','Escribe una cantidad entera entre 1 y 100.');return}showErr(document,'capq','');genFoliosServidor(n).then(j=>{S.cap.gen=j.folios;S.cap.loteId=j.lote_id;window.ultimoLoteServidor=j.lote_id;capRes();toast(j.folios.length+' folios generados. Revísalos y registra el lote.')}).catch(()=>toast('No se pudieron generar los folios en el servidor.'));return}
  if(el=t.closest('[data-capcopy]')){const {ok}=capCalc();copiar(ok.map(f=>f+'\thttps://ir.bienvisto.com.mx/'+f.toLowerCase()).join('\n'),ok.length+' enlaces copiados');return}
  if(el=t.closest('[data-capcsv]')){const c=S.cap,{ok}=capCalc();bajar('folios-nuevos.csv',csvDe(ok.map(f=>filaCsv(f,{tipo:c.tipo,lote:'por registrar',costo:c.costo,dest:destTxt(c.dest)}))));return}
- if(el=t.closest('[data-capreg]')){const c=S.cap,{ok}=capCalc();if(!ok.length||!costoOk(c))return;const loteSrv=c.loteId||window.ultimoLoteServidor||null;const id=regLote(ok,{tipo:c.tipo,costo:+c.costo,dest:c.dest||null,nota:c.nota.trim()||(c.modo==='uno'?'Alta individual':c.modo==='lista'?'Lista pegada':'Lote generado')},loteSrv||undefined);if(loteSrv)guardarLote(loteSrv,{tipo:c.tipo,costo:+c.costo,destino:c.dest||null,nota:c.nota.trim()||null});c.loteId=null;window.ultimoLoteServidor=null;Object.assign(c,{folio:'',gen:[],texto:'',nota:''});S.isub='lotes';render();toast('Lote '+id+' registrado: '+ok.length+' display'+(ok.length===1?'':'s')+' libres en '+destTxt(c.dest).toLowerCase());return}
+ if(el=t.closest('[data-capreg]')){const c=S.cap,{ok}=capCalc();if(!ok.length||!costoOk(c))return;const loteSrv=c.loteId||window.ultimoLoteServidor||null;const id=regLote(ok,{tipo:c.tipo,costo:+c.costo,dest:c.dest||null,nota:c.nota.trim()||(c.modo==='uno'?'Alta individual':c.modo==='lista'?'Lista pegada':'Lote generado')},loteSrv||undefined);if(loteSrv)guardarLote(loteSrv,{tipo:c.tipo,costo:+c.costo,destino:c.dest||null,nota:c.nota.trim()||null});c.loteId=null;window.ultimoLoteServidor=null;Object.assign(c,{folio:'',gen:[],texto:'',nota:''});S.vista='inv';S.isub='lotes';render();toast('Lote '+id+' registrado: '+ok.length+' display'+(ok.length===1?'':'s')+' libres en '+destTxt(c.dest).toLowerCase());return}
  if(el=t.closest('[data-lcsv]')){const l=LOTES.find(x=>x.id===el.dataset.lcsv);bajar('lote-'+l.id+'.csv',csvDe(loteDs(l.id).map(d=>filaCsv(d.f,{tipo:l.tipo,lote:l.id,costo:l.costo,dest:d.e==='libre'?destTxt(d.v):d.e}))));return}
  if(el=t.closest('[data-lrev]')){revDlg(el.dataset.lrev);return}
  if(el=t.closest('[data-invrevok]')){const id=el.dataset.invrevok,ds=loteDs(id);if(!ds.length||ds.some(d=>d.e!=='libre')){cerrar();toast('Ese lote ya tiene displays en uso. No se puede borrar.');return}const txt=window.prompt('Para confirmar, escribe el id del lote: '+id);if(txt!==id){toast('Borrado cancelado');return}borrarLoteSrv(id).then(()=>{for(let i=D.length-1;i>=0;i--)if(D[i].lote===id)D.splice(i,1);const li=LOTES.findIndex(l=>l.id===id);if(li>=0)LOTES.splice(li,1);log('Borró el lote '+id+' ('+ds.length+' displays)');cerrar();render();toast('Lote '+id+' borrado')}).catch(e=>{cerrar();toast('No se pudo borrar: '+e.message)});return}
