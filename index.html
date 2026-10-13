@@ -908,19 +908,33 @@ R.cfg=()=>{DR=DR||dr0();DR=dr0();
  cfgForm();if(puede('accesos'))pintarDatosPago();if(puede('accesos'))pintarDocumentacion();
 };
 // Datos de pago de Bien Visto: los ven los vendedores para entregar por transferencia. Se guardan como texto.
+let DP_EDITANDO=false,DP_DATOS=null;
+// Datos de pago de Bien Visto: se ven en modo lectura; "Editar" abre el formulario y "Guardar" lo cierra.
 async function pintarDatosPago(){const box=$('#dpago');if(!box)return;box.innerHTML='<div class="card"><p class="sub">Cargando datos de pago…</p></div>';
- let d;try{const r=await fetch('/api/admin/datos-pago');if(!r.ok)throw new Error();d=await r.json()}catch(e){if(box.isConnected)box.innerHTML='<div class="card"><p class="sub">No se pudieron cargar los datos de pago.</p></div>';return}
+ let d;try{const r=await fetch('/api/admin/datos-pago');if(!r.ok)throw new Error();d=await r.json();DP_DATOS=d}catch(e){if(box.isConnected)box.innerHTML='<div class="card"><p class="sub">No se pudieron cargar los datos de pago.</p></div>';return}
  if(!box.isConnected)return;
  const quien=d.actualizado?`Última actualización: ${esc(d.actualizado_por||'')} · ${esc(fechaMX(d.actualizado))}`:'Aún no están configurados.';
- box.innerHTML=`<div class="card"><h2 style="font-size:19px">Datos de pago de Bien Visto</h2><p class="sub">Los ven tus vendedores para entregarte por transferencia. Revisa la CLABE contra tu app del banco: son 18 dígitos, con los ceros del inicio.</p>${d.clabe&&!d.clabe_valida?`<div class="banner warn">${INFO}<span>La CLABE guardada no es válida. Corrígela antes de que un vendedor transfiera.</span></div>`:''}
+ const alerta=d.clabe&&!d.clabe_valida?`<div class="banner warn">${INFO}<span>La CLABE guardada no es válida. Corrígela antes de que un vendedor transfiera.</span></div>`:'';
+ const cabecera=`<h2 style="font-size:19px">Datos de pago de Bien Visto</h2>`;
+ if(!DP_EDITANDO){
+  const fila=(et,v)=>`<div style="padding:10px 0;border-bottom:1px solid var(--borde)"><div class="lbl" style="margin:0 0 2px">${et}</div><div style="font-size:17px;word-break:break-all">${v?esc(v):'<span class="hint" style="margin:0">Sin capturar</span>'}</div></div>`;
+  box.innerHTML=`<div class="card">${cabecera}<p class="sub">Los ven tus vendedores para entregarte por transferencia.</p>${alerta}
+  ${fila('Titular',d.titular)}${fila('CLABE',d.clabe)}${fila('Número de cuenta (opcional)',d.cuenta)}
+  <p class="sub" style="margin:10px 0">Banco: <b>${esc(d.banco||'se toma de la CLABE')}</b> · ${quien}</p>
+  <button class="btn s" id="dpe">Editar</button></div>`;
+  box.querySelector('#dpe').onclick=()=>{DP_EDITANDO=true;pintarDatosPago()};
+  return;
+ }
+ box.innerHTML=`<div class="card">${cabecera}<p class="sub">Revisa la CLABE contra tu app del banco: son 18 dígitos, con los ceros del inicio.</p>${alerta}
  <div class="fld"><label class="lbl" for="dpt">Titular</label><input class="f" id="dpt" autocomplete="off" value="${esc(d.titular||'')}" aria-describedby="dpt-e"><div id="dpt-e"></div></div>
  <div class="fld"><label class="lbl" for="dpc">CLABE</label><input class="f" id="dpc" inputmode="numeric" autocomplete="off" maxlength="22" value="${esc(d.clabe||'')}" aria-describedby="dpc-e"><div id="dpc-e"></div></div>
  <div class="fld"><label class="lbl" for="dpn">Número de cuenta (opcional)</label><input class="f" id="dpn" inputmode="numeric" autocomplete="off" value="${esc(d.cuenta||'')}" aria-describedby="dpn-e"><div id="dpn-e"></div></div>
  <p class="sub" style="margin:0 0 10px">Banco: <b>${esc(d.banco||'se toma de la CLABE')}</b> · ${quien}</p>
- <button class="btn p" id="dpg">Guardar datos de pago</button></div>`;
+ <div class="row2" style="gap:10px;flex-wrap:wrap"><button class="btn p" id="dpg">Guardar datos de pago</button><button class="btn s" id="dpx">Cancelar</button></div></div>`;
  const q=x=>box.querySelector(x);
+ q('#dpx').onclick=()=>{DP_EDITANDO=false;pintarDatosPago()};
  q('#dpg').onclick=async()=>{const b=q('#dpg');b.disabled=true;showErr(box,'dpc','');
-  try{await apiJson('/api/admin/datos-pago','PATCH',{titular:q('#dpt').value,clabe:q('#dpc').value,cuenta:q('#dpn').value});toast('Datos de pago guardados');pintarDatosPago()}
+  try{await apiJson('/api/admin/datos-pago','PATCH',{titular:q('#dpt').value,clabe:q('#dpc').value,cuenta:q('#dpn').value});toast('Datos de pago guardados');DP_EDITANDO=false;pintarDatosPago()}
   catch(e){showErr(box,'dpc',e.message);b.disabled=false}}}
 // Documentación descargable: el servidor la arma en el momento; aquí solo se baja el archivo.
 function pintarDocumentacion(){const main=$('#main');if(!main||main.querySelector('#docu'))return;
