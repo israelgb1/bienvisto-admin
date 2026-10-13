@@ -339,6 +339,7 @@ document.addEventListener('keydown',e=>{const o=$('#ov');if(!o)return;
 
 /* navegación */
 function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Clientes'],['vta','Cobros']];if(admin())items.splice(1,0,['ven','Vendedores']),items.push(['cfg','Ajustes'],['his','Historial']);if(puede('accesos'))items.push(['per','Permisos']);if(admin())items.splice(items.findIndex(x=>x[0]==='dis')+1,0,['inv','Inventario'],['reg','Registrar']);
+  for(let i=items.length-1;i>=0;i--)if(!tabOk(items[i][0]))items.splice(i,1);
  const map={reg:'Registrar',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Ajustes',his:'Historial',per:'Permisos'};
  const NC={};if(admin()){const L=pendientes();NC.res=L.length;L.forEach(x=>NC[x.v]=(NC[x.v]||0)+1)}
  const GR={res:'Operación',vta:'Dinero',cfg:'Sistema'};
@@ -346,11 +347,19 @@ function nav(){const items=[['res','Resumen'],['dis','Displays'],['cli','Cliente
  $('#rolTxt').textContent=admin()?'Administrador':'Vendedor'}
 const TIT={reg:'Registrar displays',inv:'Inventario',res:'Resumen',ven:'Vendedores',dis:'Displays',cli:'Clientes',vta:'Cobros',cfg:'Precios y reglas',his:'Historial',per:'Permisos'};
 function head(extra){return `<div class="top"><h1>${TIT[S.vista]}</h1>${extra||''}<label class="who">Ver como <select id="yo" aria-label="Ver como">${V.filter(v=>v.e==='activo').map(v=>`<option value="${v.id}" ${v.id===S.yo?'selected':''}>${esc(v.n)} (${v.rol==='admin'?'administrador':'vendedor'})</option>`).join('')}</select></label></div>`+(admin()?'':`<div class="banner">${INFO}<span>Vista de vendedor: solo ves tus displays y tus clientes. Lo demás no existe para ti, ni aunque cambies la dirección.</span></div>`)}
-function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(S.vista==='per'&&!puede('accesos'))S.vista='res';nav();R[S.vista]();aplicarPermisosUI()}
-let PERM=null;const puede=p=>!!(PERM&&PERM.permisos.includes(p));
-function aplicarPermisosUI(){if(!PERM||puede('precios'))return;['#pc','#pi','#piv','#cfgpub','#cfgrst'].forEach(q=>{const e=$(q);if(e)e.disabled=true});document.querySelectorAll('#cfgf input,#cfgf select,[data-precio]').forEach(e=>e.disabled=true)}
+function render(){if(!admin()&&(S.vista==='inv'||S.vista==='reg'||S.vista==='ven'||S.vista==='his'||S.vista==='cfg'))S.vista='res';if(!tabOk(S.vista))S.vista=['res','dis','cli','vta','cfg','his','per','ven','inv','reg'].find(tabOk)||'res';nav();R[S.vista]();aplicarPermisosUI()}
+let PERM=null;const puede=p=>!!(PERM&&Array.isArray(PERM.permisos)&&PERM.permisos.includes(p));
+const PERM_TAB={res:'ver_resumen',dis:'ver_inventario',cli:'ver_inventario',inv:'ver_inventario',reg:'inventario_registrar',ven:'ver_vendedores',vta:'ver_cobros',cfg:['precios_venta','costos_impuestos','reglas_vendedores'],his:'ver_historial',per:'accesos'};
+const tabOk=k=>{const q=PERM_TAB[k];if(!q||!PERM)return true;return Array.isArray(q)?q.some(puede):puede(q)};
+function aplicarPermisosUI(){if(!PERM)return;const off=e=>{if(e)e.disabled=true};
+ if(!puede('costos_impuestos'))['#pc','#pi','#piv'].forEach(q=>off($(q)));
+ if(!puede('precios_venta'))document.querySelectorAll('[data-precio]').forEach(off);
+ const PERM_SEC={'Precio y comisión':'precios_venta','Promoción por grupos':'precios_venta'};
+ document.querySelectorAll('#cfgf > .card').forEach(c=>{const h=c.querySelector('h2');if(!h)return;const perm=PERM_SEC[h.textContent]||'reglas_vendedores';if(!puede(perm))c.querySelectorAll('input,select,button').forEach(off)});
+ if(!puede('precios_venta')&&!puede('reglas_vendedores'))['#cfgpub','#cfgrst'].forEach(q=>off($(q)));
+ if(!puede('precios_venta')&&!puede('reglas_vendedores'))document.querySelectorAll('#cfgf .card button').forEach(off);}
 const MAIN_PERM=document.getElementById('main');if(MAIN_PERM)new MutationObserver(()=>aplicarPermisosUI()).observe(MAIN_PERM,{childList:true,subtree:true});
-async function cargarPerfil(){const r=await fetch('/api/admin/me');if(r.status===403){throw Object.assign(new Error('sin acceso'),{acceso:true})}if(!r.ok)throw new Error('perfil');const me=await r.json();PERM=me;const a=V.find(x=>x.rol==='admin');if(a){a.id='adm';a.n=me.nombre;a.m=me.correo}S.yo='adm'}
+async function cargarPerfil(){const r=await fetch('/api/admin/me');if(r.status===403){throw Object.assign(new Error('sin acceso'),{acceso:true})}if(!r.ok)throw new Error('perfil');const me=await r.json();if(!me||!Array.isArray(me.permisos))throw new Error('perfil');PERM=me;const a=V.find(x=>x.rol==='admin');if(a){a.id='adm';a.n=me.nombre;a.m=me.correo}S.yo='adm'}
 
 const R={};
 R.res0=()=>{const m=mis(),act=m.filter(d=>d.e==='activo'),n30=m.filter(d=>d.fecha&&dias(d.fecha)<=30&&d.e!=='libre'),lib=m.filter(d=>d.e==='libre');
@@ -821,6 +830,9 @@ function cfgChk(d){const e={},I=(k,a,b,m)=>{if(!/^\d+$/.test(String(d[k]).trim()
   if(i){if(a&&/^\d+$/.test(d['bn'+(i-1)])&&+d[ko]<=+d['bn'+(i-1)])e[ko]='Debe ser mayor que la meta anterior ('+d['bn'+(i-1)]+').';if(b&&/^\d+$/.test(d['bb'+(i-1)])&&+d[kb]<=+d['bb'+(i-1)])e[kb]='Debe pagar más que el bono anterior ('+mxn(+d['bb'+(i-1)])+').'}});
  I('db',1,28,'Escribe un día entre 1 y 28.');I('pm',5,120,'Entre 5 y 120 minutos.');I('lr',0,10,'Entre 0 y 10 reposiciones.');I('rm',0,60,'Entre 0 y 60 minutos.');
  return e}
+const CFG_CLAVE={p:'precio_display',c:'comision_display',pn:'promo_n',pp:'promo_precio',tm:'tope_confianza',tn:'tope_nuevo',h:'horas',db:'dias_bono',pm:'prueba_minutos',lr:'lim_rep',rm:'recibo_min',lt:'lead_d',ss:'colch',up:'parado_d',ub:'esc_bajo',bo:'bonos_on',bn0:'bono1_n',bb0:'bono1_b',bn1:'bono2_n',bb1:'bono2_b',bn2:'bono3_n',bb2:'bono3_b'};
+// Solo se envían los campos que cambiaron: cada permiso revisa sus propios campos en el servidor.
+function payloadCambios(L){const o={};L.forEach(([k])=>{const c=CFG_CLAVE[k];if(!c)return;o[c]=k==='bo'?(DR.bo==='1'?1:0):+DR[k]});return o}
 function cfgCambios(){const c=dr0(),L=[];Object.keys(c).forEach(k=>{if(String(DR[k]).trim()!==c[k]){const et=CFG_ETQ[k]||(k[1]==='n'?'Meta '+(+k.slice(2)+1)+': displays':'Bono '+(+k.slice(2)+1));L.push([k,et,cfgFmt(k,c[k]),cfgFmt(k,String(DR[k]).trim())])}});return L}
 function cfgSum(){const e=cfgChk(DR),L=cfgCambios(),bx=$('#cfgsum'),bt=$('#cfgpub');if(!bx)return;
  let h='';if(!Object.keys(e).length){const p=+DR.p,c=+DR.c,n=+DR.pn,pp=+DR.pp,k=calc(p,c,PR.costo,PR.isr),kp=calc(pp/n,c,PR.costo,PR.isr);
@@ -845,9 +857,17 @@ function cfgPublica(){const L=cfgCambios();if(!L.length)return;const n=k=>+DR[k]
  BONOS=BONOS.map((_,i)=>({n:n('bn'+i),b:n('bb'+i)}));BONOS_ON=n('bo')===1;
 
  log('Publicó cambios de precios y reglas: '+L.map(x=>x[1].toLowerCase()+' '+x[2]+' → '+x[3]).join('; '));
- guardarConfigSrv({precio_display:PR.p,comision_display:PR.c,promo_n:PR.pn,promo_precio:PR.pp,tope_confianza:TOPE,tope_nuevo:TOPE_NUEVO,prueba_minutos:PRUEBA_MIN,horas:HORAS,recibo_min:RECIBO_MIN,lim_rep:LIM_REP,dias_bono:DIAS_BONO,lead_d:LEAD_D,colch:COLCH,parado_d:PARADO_D,esc_bajo:ESC_BAJO,bonos_on:BONOS_ON?1:0,bono1_n:BONOS[0].n,bono1_b:BONOS[0].b,bono2_n:BONOS[1].n,bono2_b:BONOS[1].b,bono3_n:BONOS[2].n,bono3_b:BONOS[2].b}).then(()=>{DR=dr0();cfgForm();toast('Publicado. El panel del vendedor ya muestra los nuevos valores')}).catch(e=>{toast('No se publicó: '+e.message);cargarDisplays()})}
-const PERMISOS_ORDEN=['ver','cobros','vendedores','precios','accesos'];
-const PERM_ETQ={ver:'Ver el panel',cobros:'Cobros y ventas',vendedores:'Vendedores y niveles',precios:'Precios y reglas',accesos:'Personas y permisos'};
+ guardarConfigSrv(payloadCambios(L)).then(()=>{DR=dr0();cfgForm();toast('Publicado. El panel del vendedor ya muestra los nuevos valores')}).catch(e=>{toast('No se publicó: '+e.message);cargarDisplays()})}
+const PERM_GRUPOS=[
+ ['Ver',[['ver_resumen','Resumen','Métricas y cifras del día'],['ver_inventario','Displays, Inventario y Clientes','Listados, búsquedas y CSV'],['ver_vendedores','Vendedores y solicitudes','Lista, niveles, saldos y cuentas de cobro'],['ver_cobros','Cobros, saldos y precios','Solo lectura de ventas, saldos y configuración'],['ver_historial','Historial','Bitácora de cambios y CSV'],['ver_vista_vendedor','Vista de vendedor','Abrir la app de un vendedor con sus datos personales']]],
+ ['Inventario',[['inventario_registrar','Registrar displays y lotes','Alta individual, pegar lista y lotes nuevos'],['inventario_editar','Asignar y editar inventario','Asignar displays, editar o borrar lotes y displays']]],
+ ['Vendedores',[['vendedores_gestionar','Gestionar vendedores','Alta, nivel, estado y datos de contacto'],['solicitudes_resolver','Resolver solicitudes','Aprobar o rechazar solicitudes y cuentas de cobro']]],
+ ['Cobros',[['cobros_confirmar','Confirmar cobros','Cobro, entrega, factura y avisos de entrega'],['ventas_anular','Anular ventas','Anular ventas y aceptar anulaciones pedidas por vendedores'],['cortes_cerrar','Cerrar cortes','Cerrar el corte de un vendedor y liquidar su saldo']]],
+ ['Precios y reglas',[['precios_venta','Precio y promoción','Precio al cliente, comisión por display y grupo promocional'],['costos_impuestos','Costos e impuestos','Costo de producción, ISR e IVA'],['reglas_vendedores','Reglas de vendedores','Topes, plazos, bonos, reposiciones, prueba y referidos']]],
+ ['Sistema',[['accesos','Personas y perfiles','Dar o quitar acceso, y editar perfiles']]],
+]; 
+const PERMISOS_ORDEN=PERM_GRUPOS.flatMap(g=>g[1].map(x=>x[0]));
+const PERM_ETQ=Object.fromEntries(PERM_GRUPOS.flatMap(g=>g[1].map(x=>[x[0],x[1]])));
 let PERFILES=[],ACCESOS=[];
 async function cargarPermisos(){const [a,p]=await Promise.all([fetch('/api/admin/accesos'),fetch('/api/admin/perfiles')]);if(!a.ok||!p.ok)throw new Error('permisos');ACCESOS=await a.json();PERFILES=await p.json()}
 R.per=()=>{$('#main').innerHTML=head()+`<p class="sub" style="margin:0 0 12px;max-width:70ch">Aquí defines quién entra al panel y qué puede hacer. Los permisos se revisan en el servidor: aunque alguien intente otra acción, se rechaza.</p><div id="perCuerpo"><p class="sub">Cargando…</p></div>`;
@@ -856,7 +876,7 @@ function pintarPermisos(){
  const opPerf=sel=>PERFILES.map(p=>`<option value="${esc(p.id)}" ${p.id===sel?'selected':''}>${esc(p.nombre)}</option>`).join('');
  $('#perCuerpo').innerHTML=`<div class="card"><h2 style="font-size:19px">Personas con acceso</h2><div class="tw"><table><thead><tr><th>Nombre</th><th class="hide-m">Correo</th><th>Perfil</th><th>Estado</th></tr></thead><tbody>${ACCESOS.map(a=>`<tr><td><div class="n">${esc(a.nombre)}${a.correo===PERM.correo?' (tú)':''}</div></td><td class="hide-m">${esc(a.correo)}</td><td><select class="f" data-peril="${esc(a.correo)}" aria-label="Perfil de ${esc(a.nombre)}">${opPerf(a.perfil)}</select></td><td><label style="display:flex;gap:8px;align-items:center;min-height:36px"><input type="checkbox" data-pact="${esc(a.correo)}" ${a.activo?'checked':''}>${a.activo?'Activo':'Inactivo'}</label></td></tr>`).join('')}</tbody></table></div></div>
  <div class="card" style="margin-top:12px"><h2 style="font-size:19px">Dar acceso a alguien</h2><p class="sub">Esa persona debe entrar al panel con este correo. Cloudflare Access también tiene que permitirlo.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 12px"><div class="fld"><label class="lbl" for="ncor">Correo</label><input class="f" id="ncor" type="email"></div><div class="fld"><label class="lbl" for="nnom">Nombre</label><input class="f" id="nnom"></div><div class="fld"><label class="lbl" for="nper">Perfil</label><select class="f" id="nper">${opPerf('operador')}</select></div></div><button class="btn p" id="nacc">Dar acceso</button></div>
- <h2 style="font-size:20px;font-weight:500;margin:20px 0 8px">Perfiles</h2>${PERFILES.map(p=>`<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:18px">${esc(p.nombre)}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 12px">${PERMISOS_ORDEN.map(k=>`<label style="display:flex;gap:8px;align-items:center;min-height:36px"><input type="checkbox" data-pperm="${esc(p.id)}:${k}" ${p.permisos.includes(k)?'checked':''} ${p.id==='dueno'?'disabled':''}>${PERM_ETQ[k]}</label>`).join('')}</div>${p.id==='dueno'?'<p class="sub" style="margin:6px 0 0">El perfil de dueño siempre tiene todos los permisos.</p>':`<button class="btn s" data-psave="${esc(p.id)}" style="margin-top:10px">Guardar perfil</button>`}</div>`).join('')}`;
+ <h2 style="font-size:20px;font-weight:500;margin:20px 0 8px">Perfiles</h2>${PERFILES.map(p=>`<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:18px">${esc(p.nombre)}</h3>${PERM_GRUPOS.map(([g,items])=>`<h4 style="margin:10px 0 4px;font-size:14px;color:var(--muted);font-weight:600">${g}</h4><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px 12px">${items.map(([k,t,d])=>`<label style="display:flex;gap:8px;align-items:flex-start;min-height:36px"><input type="checkbox" data-pperm="${esc(p.id)}:${k}" ${p.permisos.includes(k)?'checked':''} ${p.id==='dueno'?'disabled':''} style="margin-top:4px"><span><b style="font-weight:600">${t}</b><br><span class="sub" style="font-size:13px">${d}</span></span></label>`).join('')}</div>`).join('')}${p.id==='dueno'?'<p class="sub" style="margin:8px 0 0">El perfil de dueño siempre tiene todos los permisos.</p>':`<button class="btn s" data-psave="${esc(p.id)}" style="margin-top:10px">Guardar perfil</button>`}</div>`).join('')}`;
  const recargar=(msg)=>cargarPermisos().then(()=>{pintarPermisos();if(msg)toast(msg)}).catch(e=>toast(e.message));
  const err=(e)=>{toast(e.message);recargar()};
  $('#perCuerpo').onchange=e=>{const t=e.target;
